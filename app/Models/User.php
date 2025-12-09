@@ -64,6 +64,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the student profile for this user.
+     */
+    public function student()
+    {
+        return $this->hasOne(Student::class);
+    }
+
+    /**
      * Get the projects guided by this user.
      */
     public function guidedProjects()

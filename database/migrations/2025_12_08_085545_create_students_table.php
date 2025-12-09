@@ -26,6 +26,7 @@ return new class extends Migration
             $table->unsignedBigInteger('department_id')->nullable();
             $table->string('course', 100)->nullable();
             $table->year('batch')->nullable();
+            $table->string('academic_year', 20)->nullable();
             $table->decimal('cgpa', 4, 2)->nullable();
             $table->json('academic_details')->nullable();
             $table->enum('training_status', ['NOT_ASSIGNED', 'IN_TRAINING', 'COMPLETED'])->default('NOT_ASSIGNED');

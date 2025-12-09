@@ -30,9 +30,9 @@ class PlacementPolicy
         return $user->hasPermissionTo('create placements') || $user->hasAnyRole(['Admin', 'TnP']);
     }
 
-    public function update(User $user, StudentPlacement $studentPlacement): bool
+    public function update(User $user, Placement $placement): bool
     {
-        return $user->hasPermissionTo('update placements') || $user->hasAnyRole(['Admin', 'TnP']);
+        return $user->hasPermissionTo('edit placements') || $user->hasAnyRole(['Admin', 'TnP']);
     }
 
     public function delete(User $user, StudentPlacement $studentPlacement): bool

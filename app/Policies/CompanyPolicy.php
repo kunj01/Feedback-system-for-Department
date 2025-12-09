@@ -25,7 +25,7 @@ class CompanyPolicy
 
     public function update(User $user, Company $company): bool
     {
-        return $user->hasPermissionTo('update companies') || $user->hasAnyRole(['Admin', 'TnP']);
+        return $user->hasPermissionTo('edit companies') || $user->hasAnyRole(['Admin', 'TnP']);
     }
 
     public function delete(User $user, Company $company): bool

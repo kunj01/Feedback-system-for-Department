@@ -29,12 +29,12 @@ class ProjectPolicy
         if ($user->hasRole('Guide') && $project->guide_id === $user->id) {
             return true;
         }
-        return $user->hasPermissionTo('update projects') || $user->hasAnyRole(['Admin', 'TnP', 'Head']);
+        return $user->hasPermissionTo('edit projects') || $user->hasAnyRole(['Admin', 'TnP', 'Head']);
     }
 
     public function delete(User $user, Project $project): bool
     {
-        return $user->hasPermissionTo('delete projects') || $user->hasAnyRole(['Admin', 'TnP']);
+        return $user->hasPermissionTo('delete projects') || $user->hasRole('Admin');
     }
 
     /**

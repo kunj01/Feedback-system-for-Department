@@ -33,7 +33,7 @@ class StudentPolicy
         if ($user->hasRole('Student') && $student->user_id === $user->id) {
             return true;
         }
-        return $user->hasPermissionTo('update students') || $user->hasAnyRole(['Admin', 'TnP', 'Head']);
+        return $user->hasPermissionTo('edit students') || $user->hasAnyRole(['Admin', 'TnP', 'Head']);
     }
 
     public function delete(User $user, Student $student): bool

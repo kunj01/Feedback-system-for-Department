@@ -36,7 +36,7 @@ class EvaluationPolicy
         if ($evaluation->evaluator_id === $user->id) {
             return true;
         }
-        return $user->hasPermissionTo('update evaluations') || $user->hasAnyRole(['Admin', 'TnP']);
+        return $user->hasPermissionTo('edit evaluations') || $user->hasAnyRole(['Admin', 'TnP']);
     }
 
     public function delete(User $user, Evaluation $evaluation): bool

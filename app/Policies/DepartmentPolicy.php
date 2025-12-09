@@ -25,7 +25,7 @@ class DepartmentPolicy
 
     public function update(User $user, Department $department): bool
     {
-        return $user->hasPermissionTo('update departments') || $user->hasRole('Admin');
+        return $user->hasPermissionTo('edit departments') || $user->hasRole('Admin');
     }
 
     public function delete(User $user, Department $department): bool
