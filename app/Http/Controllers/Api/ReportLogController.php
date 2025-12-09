@@ -22,6 +22,8 @@ class ReportLogController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', ReportLog::class);
+
         $query = ReportLog::with(['student.user', 'project', 'reviewer', 'creator']);
 
         if ($request->has('student_id')) {
@@ -67,6 +69,8 @@ class ReportLogController extends Controller
 
     public function store(StoreReportLogRequest $request)
     {
+        $this->authorize('create', ReportLog::class);
+
         $data = $request->validated();
         $data['created_by'] = auth()->id();
 
@@ -81,11 +85,15 @@ class ReportLogController extends Controller
 
     public function show(ReportLog $reportLog)
     {
+        $this->authorize('view', $reportLog);
+
         return new ReportLogResource($reportLog->load(['student.user', 'project', 'reviewer', 'creator']));
     }
 
     public function update(UpdateReportLogRequest $request, ReportLog $reportLog)
     {
+        $this->authorize('update', $reportLog);
+
         $data = $request->validated();
 
         if ($request->hasFile('file')) {
@@ -102,6 +110,8 @@ class ReportLogController extends Controller
 
     public function destroy(ReportLog $reportLog)
     {
+        $this->authorize('delete', $reportLog);
+
         if ($reportLog->file_path) {
             $this->fileUploadService->delete($reportLog->file_path);
         }

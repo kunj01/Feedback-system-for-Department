@@ -18,6 +18,8 @@ class DepartmentController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Department::class);
+
         $query = Department::with(['head', 'students']);
 
         if ($request->has('search')) {
@@ -40,6 +42,8 @@ class DepartmentController extends Controller
 
     public function store(StoreDepartmentRequest $request)
     {
+        $this->authorize('create', Department::class);
+
         $department = Department::create($request->validated());
 
         return new DepartmentResource($department->load('head'));
@@ -47,11 +51,15 @@ class DepartmentController extends Controller
 
     public function show(Department $department)
     {
-        return new DepartmentResource($department->load(['head', 'students', 'users']));
+        $this->authorize('view', $department);
+
+        return new DepartmentResource($department->load(['head', 'students']));
     }
 
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
+        $this->authorize('update', $department);
+
         $department->update($request->validated());
 
         return new DepartmentResource($department->load('head'));
@@ -59,6 +67,8 @@ class DepartmentController extends Controller
 
     public function destroy(Department $department)
     {
+        $this->authorize('delete', $department);
+
         $department->delete();
 
         return response()->json(['message' => 'Department deleted successfully'], 200);

@@ -18,6 +18,8 @@ class StudentController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Student::class);
+
         $query = Student::with(['user', 'department', 'projects', 'placements']);
 
         if ($request->has('search')) {
@@ -54,6 +56,8 @@ class StudentController extends Controller
 
     public function store(StoreStudentRequest $request)
     {
+        $this->authorize('create', Student::class);
+
         $student = Student::create($request->validated());
 
         return new StudentResource($student->load(['user', 'department']));
@@ -73,6 +77,8 @@ class StudentController extends Controller
 
     public function update(UpdateStudentRequest $request, Student $student)
     {
+        $this->authorize('update', $student);
+
         $student->update($request->validated());
 
         return new StudentResource($student->load(['user', 'department']));
@@ -80,6 +86,8 @@ class StudentController extends Controller
 
     public function destroy(Student $student)
     {
+        $this->authorize('delete', $student);
+
         $student->delete();
 
         return response()->json(['message' => 'Student deleted successfully'], 200);

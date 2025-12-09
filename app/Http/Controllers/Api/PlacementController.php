@@ -18,6 +18,8 @@ class PlacementController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', StudentPlacement::class);
+
         $query = StudentPlacement::with(['student.user', 'company']);
 
         if ($request->has('student_id')) {
@@ -69,6 +71,8 @@ class PlacementController extends Controller
 
     public function store(StorePlacementRequest $request)
     {
+        $this->authorize('create', StudentPlacement::class);
+
         $data = $request->validated();
         $placement = StudentPlacement::create($data);
         return new PlacementResource($placement->load(['student.user', 'company']));
@@ -76,17 +80,23 @@ class PlacementController extends Controller
 
     public function show(StudentPlacement $placement)
     {
+        $this->authorize('view', $placement);
+
         return new PlacementResource($placement->load(['student.user', 'company']));
     }
 
     public function update(UpdatePlacementRequest $request, StudentPlacement $placement)
     {
+        $this->authorize('update', $placement);
+
         $placement->update($request->validated());
         return new PlacementResource($placement->load(['student.user', 'company']));
     }
 
     public function destroy(StudentPlacement $placement)
     {
+        $this->authorize('delete', $placement);
+
         $placement->delete();
         return response()->json(['message' => 'Placement deleted successfully']);
     }

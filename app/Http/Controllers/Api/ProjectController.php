@@ -61,6 +61,8 @@ class ProjectController extends Controller
 
     public function store(StoreProjectRequest $request)
     {
+        $this->authorize('create', Project::class);
+
         $data = $request->validated();
 
         // Auto-generate project_id
@@ -86,6 +88,8 @@ class ProjectController extends Controller
 
     public function update(UpdateProjectRequest $request, Project $project)
     {
+        $this->authorize('update', $project);
+
         $project->update($request->validated());
 
         return new ProjectResource($project->load(['company', 'guide', 'creator']));
@@ -93,6 +97,8 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
+        $this->authorize('delete', $project);
+
         $project->delete();
 
         return response()->json(['message' => 'Project deleted successfully'], 200);

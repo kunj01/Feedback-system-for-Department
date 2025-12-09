@@ -45,6 +45,8 @@ class CompanyController extends Controller
 
     public function store(StoreCompanyRequest $request)
     {
+        $this->authorize('create', Company::class);
+
         $company = Company::create($request->validated());
 
         return new CompanyResource($company);
@@ -57,6 +59,8 @@ class CompanyController extends Controller
 
     public function update(UpdateCompanyRequest $request, Company $company)
     {
+        $this->authorize('update', $company);
+
         $company->update($request->validated());
 
         return new CompanyResource($company);
@@ -64,6 +68,8 @@ class CompanyController extends Controller
 
     public function destroy(Company $company)
     {
+        $this->authorize('delete', $company);
+
         $company->delete();
 
         return response()->json(['message' => 'Company deleted successfully'], 200);

@@ -8,44 +8,29 @@ use Illuminate\Auth\Access\Response;
 
 class DepartmentPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->hasPermissionTo('view departments') || $user->hasAnyRole(['Admin', 'TnP', 'Head']);
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, Department $department): bool
     {
-        return false;
+        return $user->hasPermissionTo('view departments') || $user->hasAnyRole(['Admin', 'TnP', 'Head']);
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasPermissionTo('create departments') || $user->hasRole('Admin');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
     public function update(User $user, Department $department): bool
     {
-        return false;
+        return $user->hasPermissionTo('update departments') || $user->hasRole('Admin');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, Department $department): bool
     {
-        return false;
+        return $user->hasPermissionTo('delete departments') || $user->hasRole('Admin');
     }
 
     /**

@@ -16,6 +16,8 @@ class NotificationController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Notification::class);
+
         $query = Notification::where('user_id', auth()->id())->with('user');
 
         if ($request->has('is_read')) {
@@ -44,6 +46,8 @@ class NotificationController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', Notification::class);
+
         $request->validate([
             'user_id' => ['required', 'exists:users,id'],
             'title' => ['required', 'string', 'max:255'],
@@ -59,17 +63,14 @@ class NotificationController extends Controller
 
     public function show(Notification $notification)
     {
-        if ($notification->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('view', $notification);
+
         return new NotificationResource($notification->load('user'));
     }
 
     public function update(Request $request, Notification $notification)
     {
-        if ($notification->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('update', $notification);
 
         $request->validate(['is_read' => ['sometimes', 'boolean']]);
         $notification->update($request->only(['is_read']));
@@ -83,25 +84,24 @@ class NotificationController extends Controller
 
     public function destroy(Notification $notification)
     {
-        if ($notification->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('delete', $notification);
+
         $notification->delete();
         return response()->json(['message' => 'Notification deleted successfully']);
     }
 
-    public function markAsRead(Notification $notification)
+    public function markAsUnread(Notification $notification)
     {
-        if ($notification->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('update', $notification);
 
-        $notification->update(['is_read' => true, 'read_at' => now()]);
+        $notification->update(['is_read' => false, 'read_at' => null]);
         return new NotificationResource($notification->load('user'));
     }
 
     public function markAllAsRead()
     {
+        $this->authorize('viewAny', Notification::class);
+
         Notification::where('user_id', auth()->id())
             ->where('is_read', false)
             ->update(['is_read' => true, 'read_at' => now()]);

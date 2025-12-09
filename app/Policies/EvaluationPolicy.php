@@ -8,44 +8,40 @@ use Illuminate\Auth\Access\Response;
 
 class EvaluationPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->hasPermissionTo('view evaluations') || $user->hasAnyRole(['Admin', 'TnP', 'Head', 'Guide', 'Student']);
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, Evaluation $evaluation): bool
     {
-        return false;
+        // Students can view their own evaluations
+        if ($user->hasRole('Student')) {
+            $student = $user->student;
+            if ($student && $evaluation->student_id === $student->id) {
+                return true;
+            }
+        }
+        return $user->hasPermissionTo('view evaluations') || $user->hasAnyRole(['Admin', 'TnP', 'Head', 'Guide']);
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasPermissionTo('create evaluations') || $user->hasAnyRole(['Admin', 'TnP', 'Guide']);
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
     public function update(User $user, Evaluation $evaluation): bool
     {
-        return false;
+        // Evaluators can update their own evaluations
+        if ($evaluation->evaluator_id === $user->id) {
+            return true;
+        }
+        return $user->hasPermissionTo('update evaluations') || $user->hasAnyRole(['Admin', 'TnP']);
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, Evaluation $evaluation): bool
     {
-        return false;
+        return $user->hasPermissionTo('delete evaluations') || $user->hasRole('Admin');
     }
 
     /**

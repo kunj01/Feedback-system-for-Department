@@ -8,44 +8,33 @@ use Illuminate\Auth\Access\Response;
 
 class ProjectPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true; // All authenticated users can view projects
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, Project $project): bool
     {
-        return false;
+        return true; // All authenticated users can view project details
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasPermissionTo('create projects') || $user->hasAnyRole(['Admin', 'TnP', 'Head', 'Guide']);
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
     public function update(User $user, Project $project): bool
     {
-        return false;
+        // Guide can update their own projects
+        if ($user->hasRole('Guide') && $project->guide_id === $user->id) {
+            return true;
+        }
+        return $user->hasPermissionTo('update projects') || $user->hasAnyRole(['Admin', 'TnP', 'Head']);
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, Project $project): bool
     {
-        return false;
+        return $user->hasPermissionTo('delete projects') || $user->hasAnyRole(['Admin', 'TnP']);
     }
 
     /**
