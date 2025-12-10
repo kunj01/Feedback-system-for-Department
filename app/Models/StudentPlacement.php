@@ -15,7 +15,10 @@ class StudentPlacement extends Model
         'project_id',
         'offer_date',
         'status',
+        'placed_by_charusat',
+        'has_offer_letter',
         'package',
+        'stipend',
         'position',
         'joining_date',
         'documents',
@@ -30,8 +33,10 @@ class StudentPlacement extends Model
             'offer_date' => 'date',
             'joining_date' => 'date',
             'package' => 'decimal:2',
+            'stipend' => 'decimal:2',
             'documents' => 'array',
             'confirmed_final' => 'boolean',
+            'has_offer_letter' => 'boolean',
         ];
     }
 

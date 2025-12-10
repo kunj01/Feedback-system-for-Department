@@ -41,7 +41,7 @@
                         Dashboard
                     </a>
 
-                    @if($roles->contains('Admin') || $roles->contains('TnP') || $roles->contains('Head'))
+                    @if($roles->contains('Admin'))
                         <!-- Users Management -->
                         <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,7 +49,9 @@
                             </svg>
                             Users
                         </a>
+                    @endif
 
+                    @if($roles->contains('Admin') || $roles->contains('TnP') || $roles->contains('Head'))
                         <!-- Students -->
                         <a href="{{ route('students.index') }}" class="{{ request()->routeIs('students.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

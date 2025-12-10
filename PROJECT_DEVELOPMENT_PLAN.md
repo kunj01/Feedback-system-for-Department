@@ -3,11 +3,19 @@
 **Project:** Training & Placement Tracking System  
 **Technology Stack:** Laravel 12.41.1, PHP 8.2.12, MySQL 8.x  
 **Database:** training_laravel  
-**Timeline:** 13 weeks (3+ months)  
+**Timeline:** 16 weeks (4 months)  
 **Start Date:** December 8, 2025  
-**Last Updated:** December 9, 2025  
+**Last Updated:** December 9, 2025 (v2.0 - Updated with Bulk Upload & Advanced Features)  
 **Current Phase:** Phase 10 - Deployment & Operations  
-**Overall Progress:** ~75% Complete
+**Overall Progress:** ~65% Complete (new features added)
+
+**Version 2.0 Updates:**
+- Added Phase 11: Bulk Student Upload & Auto Account Generation
+- Added Phase 12: Advanced Reporting System (Multi-level Evaluations)
+- Added Phase 13: Student Self-Service & Profile Gating
+- Added Phase 14: Bulk Assignment & Project ID Auto-suggestion
+- Added Phase 15: HOD Progress Matrix & Advanced Dashboards
+- Extended timeline by 3 weeks to accommodate new requirements
 
 ---
 
@@ -26,6 +34,11 @@
 | Phase 8: Testing & QA | ⏭️ Skipped | 0% | Per user request |
 | Phase 9: UI/UX Development | ✅ Complete | 95% | 32 views (mobile menu pending) |
 | **Phase 10: Deployment** | ⏳ **CURRENT** | 0% | **Starting now** |
+| **Phase 11: Bulk Upload** | 🆕 **NEW** | 0% | Excel import, auto-account generation |
+| **Phase 12: Multi-Level Reporting** | 🆕 **NEW** | 0% | 5 periodic + final report system |
+| **Phase 13: Student Self-Service** | 🆕 **NEW** | 0% | Profile gating, team management |
+| **Phase 14: Bulk Assignment** | 🆕 **NEW** | 0% | Guide assignment, Project ID suggestion |
+| **Phase 15: HOD Progress Matrix** | 🆕 **NEW** | 0% | Advanced reporting dashboard |
 
 ---
 
@@ -786,6 +799,399 @@
 - ❌ Users trained
 - ❌ **GO LIVE!**
 
+### 🆕 Milestone 11: Bulk Upload System (End of Week 14)
+- ❌ Excel import for students implemented
+- ❌ Auto-account generation working
+- ❌ Import validation and dry-run functional
+- ❌ Import logs and reporting complete
+
+### 🆕 Milestone 12: Multi-Level Reporting (End of Week 15)
+- ❌ 5 periodic reports system implemented
+- ❌ Final project report marks entry
+- ❌ Grade aggregation logic working
+- ❌ Reporting history and locking functional
+
+### 🆕 Milestone 13: Student Self-Service (End of Week 15)
+- ❌ Profile gating implemented
+- ❌ Student internship details entry
+- ❌ Team member management working
+- ❌ External guide details capture
+
+### 🆕 Milestone 14: Bulk Assignment (End of Week 16)
+- ❌ Bulk guide assignment functional
+- ❌ Project ID auto-suggestion working
+- ❌ Filter-based assignment complete
+- ❌ Conflict resolution implemented
+
+### 🆕 Milestone 15: HOD Progress Matrix (End of Week 16)
+- ❌ Reporting matrix dashboard complete
+- ❌ Advanced filtering operational
+- ❌ Bulk reminder actions working
+- ❌ Excel export of matrix functional
+
+---
+
+## 🆕 NEW PHASES (SRS v1.1 Requirements)
+
+### Phase 11: Bulk Student Upload & Auto Account Generation (Week 14)
+
+#### 11.1 Database Changes
+- [ ] Add migration: `add_student_id_to_students_table`
+  - Add `student_id` VARCHAR(50) UNIQUE NOT NULL (business identifier)
+  - Add index on `student_id`
+  - Backfill existing records with generated student IDs
+- [ ] Create `bulk_import_logs` table migration
+  - Columns: id, import_type ENUM, uploaded_by, filename, total_rows, created_count, updated_count, skipped_count, errors JSON, status ENUM, timestamps
+- [ ] Create `import_errors` table migration (optional detail table)
+  - Columns: id, import_log_id, row_number, student_id, error_message, row_data JSON, timestamps
+
+#### 11.2 Excel Template Design
+- [ ] Create student import Excel template (.xlsx)
+  - Required columns: student_id, name, email, department_code, batch, roll_no, registration_no
+  - Optional columns: contact, cgpa, father_name, mother_name, address, dob, gender, course
+  - Add data validation rules and example rows
+  - Create downloadable template route
+- [ ] Document column mappings and validation rules
+- [ ] Create sample Excel file with test data
+
+#### 11.3 Import Logic Implementation
+- [ ] Install Excel package: `composer require maatwebsite/excel` or PhpSpreadsheet
+- [ ] Create `StudentImportService` class
+  - Method: parseExcelFile(file) → returns array of rows
+  - Method: validateRows(rows) → returns validation results
+  - Method: generateImportSummary(validationResults) → preview
+  - Method: importRows(rows, strategy) → executes import with DB transaction
+- [ ] Create auto-account generation logic
+  - Generate email: strtolower(student_id)@charusat.edu.in
+  - Generate random secure password (12 chars, mixed case, numbers, symbols)
+  - Hash password using bcrypt
+  - Create user record if not exists
+  - Link user to student via user_id
+  - Send welcome email with credentials (password reset link)
+- [ ] Implement duplicate handling strategies
+  - 'overwrite': update existing student
+  - 'merge': update only NULL fields
+  - 'skip': skip if exists
+
+#### 11.4 Import Controller & Routes
+- [ ] Create `StudentImportController`
+  - uploadTemplate() → download Excel template
+  - dryRun(request) → validate and preview import
+  - import(request) → execute import
+  - showImportLog(id) → view import details
+  - downloadImportReport(id) → download result Excel
+- [ ] Add routes in `routes/web.php` and `routes/api.php`
+  - GET /import/students/template
+  - POST /import/students/dry-run
+  - POST /import/students/import
+  - GET /import/students/logs
+  - GET /import/students/logs/{id}
+  - GET /import/students/logs/{id}/download
+- [ ] Create `ImportStudentRequest` validation class
+- [ ] Create authorization policy for import (Admin + TnP only)
+
+#### 11.5 UI Implementation
+- [ ] Create import wizard view (students/import.blade.php)
+  - Step 1: Download template
+  - Step 2: Upload Excel file
+  - Step 3: Review dry-run results (table with color-coded rows)
+  - Step 4: Confirm and import
+  - Step 5: View import summary
+- [ ] Create import logs listing view (students/imports.blade.php)
+- [ ] Create import detail view (students/imports/show.blade.php)
+- [ ] Add "Import Students" button to students index page
+
+#### 11.6 Notification & Email
+- [ ] Create `StudentAccountCreated` mail class
+  - Email template with credentials and first-login link
+  - Include password reset token
+- [ ] Create `ImportCompleted` notification for T&P
+- [ ] Queue emails to avoid timeout on bulk imports
+
+#### 11.7 Testing & Validation
+- [ ] Test with sample Excel (100 students)
+- [ ] Test duplicate handling
+- [ ] Test validation errors (missing required fields)
+- [ ] Test email delivery
+- [ ] Test import log generation
+- [ ] Acceptance: Import 100 students, all accounts created, emails sent
+
+---
+
+### Phase 12: Advanced Reporting System - Multi-Level Evaluations (Week 15)
+
+#### 12.1 Database Changes
+- [ ] Create `evaluation_reports` table migration
+  - Columns: id, evaluation_id FK, student_id FK, guide_id FK, project_id FK, report_number INT, reporting_date DATE, marks_out_of_15 DECIMAL(4,2), comments TEXT, evidence_file_path VARCHAR, locked BOOLEAN DEFAULT 0, timestamps
+  - Unique constraint: (evaluation_id, report_number) or (student_id, project_id, report_number)
+- [ ] Create `final_project_reports` table migration (or add to evaluations)
+  - Columns: id, evaluation_id FK, student_id FK, guide_id FK, project_id FK, marks_out_of_25 DECIMAL(4,2), report_date DATE, comments TEXT, attached_files JSON, locked BOOLEAN, timestamps
+- [ ] Update `evaluations` table migration
+  - Add computed columns: total_periodic_marks DECIMAL(5,2) NULL (sum of 5 reports), final_marks DECIMAL(4,2) NULL, internal_total DECIMAL(6,2) NULL (periodic + final), computed_grade VARCHAR(5) NULL
+  - Add `reporting_complete` BOOLEAN DEFAULT 0 (flag when all 5 + final done)
+
+#### 12.2 Business Logic Implementation
+- [ ] Create `ReportingService` class
+  - Method: createPeriodicReport(studentId, projectId, guideId, reportNumber, marks, comments, file)
+  - Method: updatePeriodicReport(reportId, data) → only if not locked
+  - Method: lockReport(reportId)
+  - Method: unlockReport(reportId) → HOD/Admin only
+  - Method: createFinalReport(studentId, projectId, guideId, marksOutOf25, comments, files)
+  - Method: computeTotalMarks(studentId, projectId) → sum periodic + final
+  - Method: computeGrade(totalMarks) → map to A+, A, B+, B, C based on 100-point scale
+  - Method: checkReportingComplete(studentId, projectId) → returns boolean
+- [ ] Update grade mapping for 100-point scale
+  - A+: 90-100
+  - A: 75-89
+  - B+: 60-74
+  - B: 50-59
+  - C: 40-49
+  - F: <40
+  - (Or keep 75-point scale and adjust ranges accordingly)
+- [ ] Create aggregation logic
+  - Validate minimum 5 periodic reports before final grade
+  - Option: Allow partial grade calculation with HOD approval
+  - Store aggregated values in evaluations table
+
+#### 12.3 API Endpoints
+- [ ] Add reporting endpoints
+  - POST /api/evaluations/{id}/reports → create periodic report
+  - GET /api/evaluations/{id}/reports → list all reports
+  - GET /api/evaluations/{id}/reports/{reportNum} → get specific report
+  - PUT /api/evaluations/{id}/reports/{reportNum} → update report (if unlocked)
+  - POST /api/evaluations/{id}/reports/{reportNum}/lock → lock report
+  - POST /api/evaluations/{id}/final-report → create final report
+  - GET /api/evaluations/{id}/final-report → get final report
+  - POST /api/evaluations/{id}/compute-grade → trigger grade calculation
+
+#### 12.4 UI Implementation
+- [ ] Create periodic reporting form view
+  - Input: report number (1-5), date, marks/15, comments, file upload
+  - Show list of existing reports with edit/delete (if unlocked)
+- [ ] Create final report form view
+  - Input: marks/25, comments, file uploads
+- [ ] Update evaluation detail view
+  - Show table: Report 1-5 (marks), Final Report (marks), Total, Grade
+  - Color-code complete vs incomplete reports
+  - Show lock/unlock buttons (role-based)
+- [ ] Create reporting history timeline view
+  - Visual timeline showing all reporting entries
+
+#### 12.5 Authorization & Locking
+- [ ] Update `EvaluationPolicy`
+  - Guides can create/edit reports until locked
+  - HOD can approve and request changes
+  - T&P can lock/unlock reports
+  - Students can only view
+- [ ] Implement locking workflow
+  - Guide submits report → locked automatically OR manually
+  - HOD reviews → can unlock and request revision
+  - Final lock by T&P after approval
+
+#### 12.6 Testing
+- [ ] Test creating 5 periodic reports + final
+- [ ] Test grade computation (example: 12,13,14,15,10 + 22 = 86 → Grade A)
+- [ ] Test locking/unlocking workflow
+- [ ] Test partial reporting (3 reports only) → grade withheld
+- [ ] Acceptance: Guide adds 5 reports + final, system computes correct grade
+
+---
+
+### Phase 13: Student Self-Service & Profile Gating (Week 15)
+
+#### 13.1 Profile Gating Implementation
+- [ ] Define required fields for student profile
+  - student_id, name, email, contact, department_id, batch, roll_no, registration_no, cgpa, address, emergency_contact
+- [ ] Create `ProfileCompletenessService`
+  - Method: checkProfileComplete(studentId) → returns boolean
+  - Method: getMissingFields(studentId) → returns array of missing field names
+- [ ] Add profile_complete flag to students table (computed or stored)
+- [ ] Implement gating middleware: `EnsureProfileComplete`
+  - Applied to routes: accept project, start training, view evaluations
+  - Redirect to profile completion page if incomplete
+
+#### 13.2 Student Internship/Placement Details
+- [ ] Create `student_internships` table migration
+  - Columns: id, student_id FK, company_id FK NULL (or free text company_name), external_guide_name, external_guide_email, external_guide_phone, external_guide_designation, start_date, end_date, stipend DECIMAL, position, responsibilities TEXT, documents JSON, status ENUM, verified BOOLEAN DEFAULT 0, timestamps
+- [ ] Create `internship_team_members` table migration
+  - Columns: id, internship_id FK, member_type ENUM('INTERNAL','EXTERNAL'), student_id FK NULL (if internal), external_name VARCHAR NULL, external_email VARCHAR NULL, role VARCHAR, timestamps
+- [ ] Create `StudentInternshipController`
+  - CRUD for student's own internship records
+  - addTeamMember(internshipId, memberData)
+  - removeTeamMember(internshipId, memberId)
+- [ ] Add validation
+  - Students can only edit their own internships
+  - Validate team member capacity (max configurable)
+  - Validate date ranges
+  - Prevent duplicate team members
+
+#### 13.3 UI Implementation
+- [ ] Create profile completion page (students/profile/complete.blade.php)
+  - Form with all required fields
+  - Progress indicator showing % complete
+  - Highlight missing fields in red
+- [ ] Create student internship management view (students/internships/index.blade.php)
+  - List student's internships
+  - Add/edit/delete buttons
+- [ ] Create internship form view (students/internships/create.blade.php)
+  - Company selection (dropdown + free text)
+  - External guide details
+  - Date range picker
+  - Team members section (add/remove)
+  - File upload for offer letter, completion certificate
+- [ ] Update student dashboard
+  - Show profile completion percentage
+  - Show "Complete Profile" alert if incomplete
+
+#### 13.4 Notifications
+- [ ] Notify T&P when student adds internship details
+- [ ] Notify T&P when student updates team members
+- [ ] Create verification workflow (T&P can verify internship details)
+
+#### 13.5 Testing
+- [ ] Test profile gating (incomplete profile cannot access restricted pages)
+- [ ] Test internship CRUD
+- [ ] Test team member addition (internal student linking)
+- [ ] Test external guide capture
+- [ ] Acceptance: Student with incomplete profile redirected to completion page
+
+---
+
+### Phase 14: Bulk Assignment & Project ID Auto-Suggestion (Week 16)
+
+#### 14.1 Project ID Auto-Suggestion
+- [ ] Create `ProjectIdService` class
+  - Method: suggestNextProjectId(departmentCode, year) → returns suggested ID
+  - Algorithm:
+    ```
+    Format: TP-{YEAR}-{DEPT}-{SEQUENCE}
+    1. Query max project_id for given year and dept using LIKE 'TP-{year}-{dept}-%'
+    2. Extract sequence number (last 4 digits)
+    3. Increment by 1, pad to 4 digits
+    4. Return TP-{year}-{dept}-{newSeq}
+    Example: Last = TP-2025-CSE-0042 → Next = TP-2025-CSE-0043
+    ```
+- [ ] Add API endpoint
+  - GET /api/projects/suggest-id?dept=CSE&year=2025
+  - Response: { "suggested_project_id": "TP-2025-CSE-0043" }
+
+#### 14.2 Bulk Guide Assignment
+- [ ] Create `BulkAssignmentService` class
+  - Method: assignGuideBulk(studentIds, guideId, overwriteExisting)
+  - Method: assignGuideByFilters(filters, guideId)
+  - Method: validateGuideEligibility(guideId) → check role
+  - Method: handleConflicts(studentId, existingGuide, newGuide) → conflict resolution
+- [ ] Create assignment Excel template
+  - Columns: student_id, guide_user_id (or guide_email)
+  - Downloadable template
+- [ ] Create `BulkAssignmentController`
+  - uploadTemplate() → download template
+  - dryRun(request) → preview assignments and conflicts
+  - assign(request) → execute bulk assignment
+  - assignByFilters(request) → filter-based assignment
+
+#### 14.3 Filter-Based Assignment
+- [ ] Implement assignment filters UI
+  - Department, Batch, Company, Project Domain, CGPA range, Placement Status
+  - Preview: Show count and list of affected students
+  - Confirm: Assign selected guide to filtered students
+- [ ] Add conflict resolution
+  - Option 1: Overwrite existing guide
+  - Option 2: Skip if guide already assigned
+  - Option 3: Add as co-guide
+
+#### 14.4 API Endpoints
+- [ ] POST /api/assignments/bulk/guide → bulk assign from array
+- [ ] POST /api/assignments/bulk/guide/excel → upload Excel for assignment
+- [ ] POST /api/assignments/bulk/guide/dry-run → preview assignment
+- [ ] POST /api/assignments/bulk/guide/by-filters → filter-based assignment
+
+#### 14.5 UI Implementation
+- [ ] Create bulk assignment wizard view
+  - Step 1: Choose method (Excel upload or Filter-based)
+  - Step 2: Upload file or apply filters
+  - Step 3: Preview affected students and conflicts
+  - Step 4: Confirm assignment
+  - Step 5: View summary
+- [ ] Add "Bulk Assign Guide" button to students index (T&P only)
+- [ ] Add "Suggest Next ID" button to project create form
+
+#### 14.6 Testing
+- [ ] Test Project ID suggestion (sequential generation)
+- [ ] Test bulk guide assignment (100 students)
+- [ ] Test conflict handling (overwrite vs skip)
+- [ ] Test filter-based assignment
+- [ ] Acceptance: Assign guide to 50 students via filters, all assigned correctly
+
+---
+
+### Phase 15: HOD Progress Matrix & Advanced Dashboards (Week 16)
+
+#### 15.1 Progress Matrix Implementation
+- [ ] Create `ProgressMatrixService` class
+  - Method: getStudentProgressMatrix(filters) → returns matrix data
+  - Columns: Student ID, Name, Project, Report 1-5 (marks), Final Report (marks), Total, Grade, Status
+  - Filters: Department, Batch, Guide, Pending Reports, Incomplete Profiles, Placement Status
+  - Method: exportMatrixToExcel(filters) → generates downloadable Excel
+
+#### 15.2 Dashboard Enhancements (HOD)
+- [ ] Create HOD Progress Matrix view (hod/progress-matrix.blade.php)
+  - Data table with sortable columns
+  - Color-coded cells (green=complete, yellow=partial, red=missing)
+  - Filter panel (department, batch, guide, status)
+  - Export to Excel button
+- [ ] Add filtering options
+  - Pending placement/training
+  - Pending reporting entries (missing any of 5 reports)
+  - Pending approvals
+  - Students with incomplete profiles
+  - CGPA range
+  - Date range (reporting dates)
+
+#### 15.3 Bulk Actions
+- [ ] Implement bulk reminder triggers
+  - Select multiple students from matrix
+  - Send reminder email for pending reports
+  - Send reminder for incomplete profile
+- [ ] Implement bulk approval
+  - HOD can bulk-approve evaluations
+- [ ] Create bulk comment functionality
+  - HOD can add comments to multiple evaluations
+
+#### 15.4 API Endpoints
+- [ ] GET /api/hod/progress-matrix → get matrix data
+- [ ] POST /api/hod/progress-matrix/export → export to Excel
+- [ ] POST /api/hod/progress-matrix/send-reminders → bulk reminders
+- [ ] POST /api/hod/evaluations/bulk-approve → bulk approve
+
+#### 15.5 Reports & Analytics
+- [ ] Create guide performance report
+  - Guide name, assigned students count, avg marks, reports completed, reports pending
+- [ ] Create department analytics dashboard
+  - Placement rate, avg CGPA, completion rate
+  - Charts: placement trends, company-wise breakdown
+- [ ] Create Excel export templates
+  - Student progress matrix export
+  - Guide performance export
+  - Department analytics export
+
+#### 15.6 UI Enhancements
+- [ ] Add advanced filtering UI component (reusable)
+- [ ] Create export progress indicator
+- [ ] Add bulk action confirmation modals
+- [ ] Create reporting statistics widgets for HOD dashboard
+
+#### 15.7 Testing
+- [ ] Test progress matrix with 200 students
+- [ ] Test filtering (pending reports returns correct students)
+- [ ] Test Excel export (format correct, data accurate)
+- [ ] Test bulk reminders (emails sent to correct students)
+- [ ] Acceptance: HOD filters for "pending 3+ reports", exports to Excel, sends bulk reminder
+
+---
+
+## Updated Project Milestones
+
 ---
 
 ## Key Deliverables
@@ -886,6 +1292,403 @@
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** December 8, 2025  
-**Next Review:** End of Week 1 (December 15, 2025)
+**Document Version:** 2.0  
+**Last Updated:** December 9, 2025  
+**Next Review:** End of Week 14 (December 22, 2025)
+
+---
+
+## 📋 Implementation Summary (SRS v1.1 Updates)
+
+### New Features Added
+1. **Bulk Student Upload System**
+   - Excel import with dry-run validation
+   - Auto user account generation (email: studentidinsmall@charusat.edu.in)
+   - Automated password generation and email delivery
+   - Import logs and error reporting
+   - Complexity: HIGH | Estimated: 12-16 hours
+
+2. **Multi-Level Reporting System**
+   - 5 periodic evaluation reports (15 marks each)
+   - Final project report (25 marks)
+   - Automated grade aggregation and computation
+   - Report locking and approval workflow
+   - Complexity: HIGH | Estimated: 16-20 hours
+
+3. **Student Self-Service**
+   - Profile completion gating mechanism
+   - Internship/placement details entry
+   - Team member management (internal/external)
+   - External guide information capture
+   - Complexity: MEDIUM | Estimated: 8-12 hours
+
+4. **Bulk Assignment Features**
+   - Project ID auto-suggestion algorithm
+   - Bulk guide assignment (Excel + filter-based)
+   - Conflict resolution strategies
+   - Assignment preview and confirmation
+   - Complexity: MEDIUM | Estimated: 10-14 hours
+
+5. **HOD Progress Matrix**
+   - Advanced reporting dashboard
+   - Multi-dimensional filtering
+   - Excel export functionality
+   - Bulk reminder and approval actions
+   - Complexity: MEDIUM | Estimated: 8-12 hours
+
+### Database Changes
+- Added `student_id` column to students table (UNIQUE business identifier)
+- New table: `bulk_import_logs`
+- New table: `evaluation_reports` (periodic reports)
+- New table: `final_project_reports` (or column in evaluations)
+- New table: `student_internships`
+- New table: `internship_team_members`
+- Updated `evaluations` table (computed columns for aggregation)
+
+### API Additions
+- 15+ new endpoints for bulk operations
+- Import/export endpoints with Excel support
+- Reporting endpoints (CRUD for periodic + final)
+- Progress matrix and analytics endpoints
+- Assignment and suggestion endpoints
+
+### Estimated Additional Timeline
+- Phase 11 (Bulk Upload): 1 week
+- Phase 12 (Reporting): 1 week
+- Phase 13 (Self-Service): 0.5 week (parallel with Phase 12)
+- Phase 14 (Bulk Assignment): 0.5 week (parallel with Phase 15)
+- Phase 15 (HOD Matrix): 0.5 week
+- **Total: 3 additional weeks (extended to Week 16)**
+
+---
+
+## 🎯 Prioritized Implementation Plan (Phases 11-15)
+
+### Week 14: Bulk Upload & Account Generation (Phase 11)
+**Priority: HIGH** | **Complexity: HIGH**
+
+1. **Day 1-2: Database & Setup** (6 hours)
+   - Add student_id column migration with backfill script
+   - Create bulk_import_logs table
+   - Install maatwebsite/excel package
+   - Create Excel template with sample data
+
+2. **Day 3-4: Import Service** (8 hours)
+   - Build StudentImportService with validation
+   - Implement auto-account generation logic
+   - Create email notification (StudentAccountCreated)
+   - Implement duplicate handling strategies
+
+3. **Day 5: Controller & Routes** (4 hours)
+   - Create StudentImportController
+   - Add dry-run and import endpoints
+   - Implement authorization (Policy)
+
+4. **Day 6-7: UI & Testing** (6 hours)
+   - Build import wizard interface
+   - Create import logs listing view
+   - Test with 100-student sample file
+   - Acceptance testing
+
+### Week 15: Multi-Level Reporting + Student Self-Service (Phases 12 & 13)
+**Priority: HIGH** | **Complexity: HIGH**
+
+**Phase 12: Reporting System** (12 hours)
+1. **Day 1-2: Database** (4 hours)
+   - Create evaluation_reports table
+   - Create final_project_reports table
+   - Update evaluations table (computed columns)
+
+2. **Day 3-4: Business Logic** (6 hours)
+   - Build ReportingService class
+   - Implement grade computation (100-point scale)
+   - Create aggregation logic
+   - Implement locking workflow
+
+3. **Day 5: API & UI** (4 hours)
+   - Add reporting endpoints
+   - Create periodic report form view
+   - Create final report form view
+   - Update evaluation detail view (report table)
+
+**Phase 13: Student Self-Service** (8 hours - parallel)
+1. **Day 1-2: Profile Gating** (4 hours)
+   - Create ProfileCompletenessService
+   - Implement EnsureProfileComplete middleware
+   - Build profile completion UI
+
+2. **Day 3-4: Internship Management** (4 hours)
+   - Create student_internships table
+   - Create internship_team_members table
+   - Build StudentInternshipController
+   - Create internship management UI
+
+### Week 16: Bulk Assignment + HOD Matrix (Phases 14 & 15)
+**Priority: MEDIUM** | **Complexity: MEDIUM**
+
+**Phase 14: Bulk Assignment** (10 hours)
+1. **Day 1-2: Project ID Suggestion** (3 hours)
+   - Build ProjectIdService with sequence algorithm
+   - Add API endpoint
+   - Integrate into project create form
+
+2. **Day 3-4: Bulk Assignment** (7 hours)
+   - Build BulkAssignmentService
+   - Create assignment Excel template
+   - Implement filter-based assignment
+   - Create conflict resolution logic
+   - Build bulk assignment wizard UI
+
+**Phase 15: HOD Progress Matrix** (8 hours - parallel)
+1. **Day 1-2: Matrix Service** (4 hours)
+   - Build ProgressMatrixService
+   - Implement filtering logic
+   - Create Excel export functionality
+
+2. **Day 3-4: Dashboard & Actions** (4 hours)
+   - Build HOD progress matrix view
+   - Add advanced filtering UI
+   - Implement bulk reminders
+   - Create analytics widgets
+
+---
+
+## 📊 Updated Success Criteria
+
+### Technical Criteria
+- ✅ All SRS v1.0 requirements implemented
+- ❌ All SRS v1.1 requirements implemented (Phases 11-15)
+- ✅ Database properly indexed and optimized
+- ❌ All new migrations tested and backfill scripts verified
+- ❌ Excel import handles 1000+ students without timeout
+- ❌ Reporting system correctly aggregates marks and computes grades
+- ❌ Profile gating prevents incomplete profiles from accessing restricted features
+- ❌ Bulk assignment handles conflicts correctly
+- ❌ HOD matrix exports clean Excel files
+
+### Functional Criteria
+- ❌ T&P can bulk upload 100 students and all receive email credentials
+- ❌ Guides can enter 5 periodic reports + final report, system computes grade
+- ❌ Students with incomplete profiles are redirected to completion page
+- ❌ T&P can bulk assign guides to 50 students via filters
+- ❌ HOD can filter progress matrix for "missing reports" and send reminders
+- ❌ Excel exports contain correct data with proper formatting
+
+### Performance Criteria
+- ❌ Bulk import of 500 students completes within 2 minutes
+- ❌ Progress matrix loads for 1000 students within 3 seconds
+- ❌ Excel export of 500 students completes within 30 seconds
+- ❌ Grade computation for 100 students completes within 5 seconds
+
+### User Acceptance Criteria
+- ❌ T&P officers trained on bulk upload workflow
+- ❌ Guides trained on multi-level reporting system
+- ❌ Students understand profile gating requirements
+- ❌ HOD can effectively use progress matrix for monitoring
+- ❌ All user manuals updated with new features
+
+---
+
+## 🔄 Migration & Backfill Strategy
+
+### student_id Column Addition
+```sql
+-- Step 1: Add nullable column
+ALTER TABLE students ADD COLUMN student_id VARCHAR(50) NULL;
+
+-- Step 2: Backfill with generated values
+UPDATE students 
+SET student_id = CONCAT(
+    UPPER(SUBSTRING(departments.code, 1, 3)),
+    batch,
+    LPAD(students.id, 4, '0')
+)
+FROM departments 
+WHERE students.department_id = departments.id
+AND students.student_id IS NULL;
+
+-- Step 3: Make NOT NULL and add unique constraint
+ALTER TABLE students MODIFY student_id VARCHAR(50) NOT NULL;
+ALTER TABLE students ADD UNIQUE KEY unique_student_id (student_id);
+CREATE INDEX idx_student_id ON students(student_id);
+```
+
+### Data Verification Checklist
+- [ ] Verify all existing students have student_id
+- [ ] Verify all student_id values are unique
+- [ ] Test foreign key relationships still work
+- [ ] Verify user-student linkages intact
+- [ ] Test bulk import with both new and existing students
+- [ ] Verify grade computation for students with old evaluation format
+
+---
+
+## 📦 New Package Dependencies
+
+```json
+{
+  "require": {
+    "maatwebsite/excel": "^3.1",
+    "phpoffice/phpspreadsheet": "^1.29"
+  }
+}
+```
+
+**Installation:**
+```bash
+composer require maatwebsite/excel
+php artisan vendor:publish --provider="Maatwebsite\Excel\ExcelServiceProvider"
+```
+
+---
+
+## 🧪 Testing Checklist (Phases 11-15)
+
+### Phase 11: Bulk Upload
+- [ ] Upload valid Excel with 100 students → all created
+- [ ] Upload Excel with duplicates → handled per strategy
+- [ ] Upload Excel with missing required field → row rejected
+- [ ] Upload Excel with invalid email → validation error
+- [ ] Dry-run shows correct preview
+- [ ] Import log created with accurate counts
+- [ ] Welcome emails sent to all new users
+- [ ] Users can login with generated credentials
+
+### Phase 12: Multi-Level Reporting
+- [ ] Guide creates 5 periodic reports → saved correctly
+- [ ] Guide creates final report → saved correctly
+- [ ] System computes total marks correctly (example: 12+13+14+15+10+22=86)
+- [ ] System maps total to correct grade (86 → A)
+- [ ] Reports can be edited when unlocked
+- [ ] Reports cannot be edited when locked
+- [ ] HOD can unlock reports
+- [ ] Grade withheld when fewer than 5 reports
+
+### Phase 13: Student Self-Service
+- [ ] Incomplete profile redirected to completion page
+- [ ] Complete profile can access restricted pages
+- [ ] Student can add internship details
+- [ ] Student can add internal team member (linked to student record)
+- [ ] Student can add external team member (free text)
+- [ ] T&P receives notification when internship added
+
+### Phase 14: Bulk Assignment
+- [ ] Project ID suggestion returns correct next ID
+- [ ] Sequential IDs generated correctly (TP-2025-CSE-0042 → 0043)
+- [ ] Bulk guide assignment via Excel works for 50 students
+- [ ] Bulk assignment via filters works correctly
+- [ ] Conflict resolution: overwrite existing guide works
+- [ ] Conflict resolution: skip existing guide works
+- [ ] Assignment preview shows accurate affected students count
+
+### Phase 15: HOD Progress Matrix
+- [ ] Progress matrix loads all students correctly
+- [ ] Filter "pending reports" returns students missing reports
+- [ ] Filter "incomplete profiles" returns correct students
+- [ ] Excel export contains all columns and correct data
+- [ ] Bulk reminder sends emails to selected students
+- [ ] Bulk approve evaluations works for multiple selections
+- [ ] Color-coding shows correct status (green/yellow/red)
+
+---
+
+## 🚀 Quick Start Guide (New Features)
+
+### For T&P Officers
+
+**Bulk Upload Students:**
+1. Navigate to Students → Import Students
+2. Download Excel template
+3. Fill in student details (student_id is required)
+4. Upload filled Excel
+5. Review dry-run preview
+6. Confirm import
+7. Check import log for results
+8. Students receive welcome email with credentials
+
+**Bulk Assign Guides:**
+1. Navigate to Assignments → Bulk Assign Guide
+2. Choose method: Excel Upload or Filter-Based
+3. If Excel: Upload template with student_id and guide_id
+4. If Filters: Apply filters (department, batch, etc.)
+5. Review affected students
+6. Confirm assignment
+7. Check assignment summary
+
+### For Guides
+
+**Add Periodic Reports:**
+1. Navigate to Evaluations → My Assigned Students
+2. Select student and project
+3. Click "Add Report"
+4. Select report number (1-5)
+5. Enter marks out of 15
+6. Add comments and upload evidence (optional)
+7. Submit report
+8. Repeat for all 5 reports
+9. Add final report (marks out of 25)
+10. System computes total and grade automatically
+
+### For Students
+
+**Complete Profile:**
+1. Login to system
+2. If profile incomplete, redirected to completion page
+3. Fill all required fields (marked with *)
+4. Submit profile
+5. Access now granted to all features
+
+**Add Internship Details:**
+1. Navigate to My Profile → Internships
+2. Click "Add Internship"
+3. Enter company, external guide, dates, stipend
+4. Add team members (search internal students or add external)
+5. Upload offer letter and other documents
+6. Submit for T&P verification
+
+### For HOD
+
+**View Progress Matrix:**
+1. Navigate to Dashboard → Progress Matrix
+2. Apply filters (department, pending reports, etc.)
+3. View color-coded matrix
+4. Click student row for details
+5. Export to Excel if needed
+6. Select students and send bulk reminders
+7. Bulk approve evaluations if ready
+
+---
+
+## 📖 Documentation Updates Required
+
+### User Manuals to Update
+1. **T&P Officer Manual**
+   - Chapter: Bulk Student Import (new)
+   - Chapter: Bulk Guide Assignment (new)
+   - Chapter: Project ID Management (updated)
+
+2. **Guide Manual**
+   - Chapter: Periodic Reporting System (new)
+   - Chapter: Final Report Submission (new)
+   - Chapter: Report Locking and Approvals (new)
+
+3. **Student Manual**
+   - Chapter: Profile Completion Requirements (new)
+   - Chapter: Managing Internship Details (new)
+   - Chapter: Team Member Management (new)
+
+4. **HOD Manual**
+   - Chapter: Progress Matrix Dashboard (new)
+   - Chapter: Bulk Actions and Reminders (new)
+   - Chapter: Advanced Filtering and Reporting (new)
+
+5. **System Administrator Manual**
+   - Chapter: Student ID Backfill Process (new)
+   - Chapter: Import Log Management (new)
+   - Chapter: Grade Computation Configuration (new)
+
+---
+
+**Document Version:** 2.0  
+**Last Updated:** December 9, 2025  
+**Next Review:** End of Week 14 (December 22, 2025)

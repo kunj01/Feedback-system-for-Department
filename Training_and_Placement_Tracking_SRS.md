@@ -1,491 +1,620 @@
 # Training & Placement Tracking Software — Software Requirements Specification (SRS)
 
-Version: 1.0  
-Date: 2025-12-06  
-Author: GitHub Copilot (for sbs2083)
+Version: 1.1  
+Date: 2025-12-09  
+Author: GitHub Copilot (for sbs2083) — Updated to include bulk-upload, student gating, multi-reporting and bulk assignment features.
 
-Contents
-1. Introduction
-2. System Overview & Scope
-3. Stakeholders & User Roles
-4. Functional Requirements (by role)
-5. Business Rules & Assumptions
-6. Non-functional Requirements
-7. Data Requirements — Logical Data Model & Tables (MySQL)
-8. API Endpoints (Laravel REST resources)
-9. UI / UX — Screens & Workflows
-10. Security, Authentication & Authorization
-11. File Uploads & Storage
-12. Notifications
-13. Reporting & Dashboards
-14. Testing Strategy & Acceptance Criteria
-15. Deployment & Operational Considerations
-16. Appendix: ER Diagram (text), Sample SQL snippets, Glossary
+NOTE: This document is an update/extension to the base SRS (version 1.0). All previously defined requirements, assumptions, and tables remain valid unless explicitly reconciled below. New or changed items are clearly labelled and integrated into the original SRS structure.
 
----
+Contents (high level)
+1. Summary of Changes (Quick Summary)
+2. Clarifications and Assumptions
+3. New & Updated Functional Requirements (numbered FR-*)
+4. Business Rules & Grade/Reporting Reconciliation
+5. Data Requirements — Schema Changes & New Tables (MySQL / Laravel migration-level)
+6. API Endpoints (new/updated)
+7. UI / UX Changes & Excel Export/Import Templates
+8. Process Flows & Pseudocode (Auto-account generation, Project ID suggestion, Bulk assignment, Reporting storage)
+9. Acceptance Criteria & Test Cases (actionable)
+10. Migration & Data-migration Considerations
+11. Implementation Plan (prioritized steps + complexity & rough estimates)
+12. Appendix (sample Excel rows, example migration snippets, example controller endpoint)
 
-1. Introduction
-This SRS documents requirements for a Training & Placement (T&P) Tracking System built with Laravel (PHP) and MySQL. The system supports five role types: Admin, T&P Officer, Head of Department (HOD / Head), Guide, and Student. It manages projects/training assignments, evaluations, multi-company placements, progress tracking and reporting.
+--------------------------------------------------------------
+1. Quick Summary — What changed and why
+- Added bulk Excel upload for T&P officers to create/update student records and auto-generate user accounts (email format: studentidinsmall@charusat.edu.in).
+- Introduced a stronger student identity model (student.student_id). To remain compatible with Laravel/Eloquent, we use an immutable unique student_id while preserving internal auto-increment id. (See Assumptions.)
+- Added bulk assignment features: faculty assignment as Internal Guide (single/bulk via filters/Excel) and bulk Project ID assignment with next-sequence suggestion.
+- Expanded Reporting model: Guides can add at least five periodic reports (each out of 15) and one final project report out of 25. The system aggregates to compute internal marks and map to grades A+..C.
+- Student self-service gating: Students must fill required profile fields before "start training" / project acceptance.
+- HOD dashboard: reporting matrix (Reporting 1..5, Final Report, Total, Grade) and filtering for pending items.
+- Student listing: rich filters and Excel-ready export with NA/NULL rules.
+- Added new tables/migrations, API endpoints, sample Excel templates, pseudo-code and acceptance test cases.
 
-Important rules (system-wide)
-- If any field is empty → treat as NULL in database.
-- If the field is marked "NA" → the literal string "NA" is a valid entry (for fields where NA is permitted).
-- Students may have multiple placement entries; T&P Officer confirms final placement(s).
-- HOD and T&P can also act as Guides (roles can be combined).
-- Role-based access control implemented via Laravel Policies & Gates (or spatie/laravel-permission).
+--------------------------------------------------------------
+2. Clarifications & Assumptions (explicit)
+- Student identifier: The uploaded data uses a "Student ID" (alphanumeric string). Reasonable assumption: For Laravel conventions and referential integrity, we will NOT drop the internal auto-increment id column; instead:
+  - students.id: BIGINT PK (internal)
+  - students.student_id: VARCHAR UNIQUE NOT NULL (business primary key / external id)
+  - All external operations (Excel, user generation) use student_id as the authoritative identifier.
+  - This keeps compatibility with relationships and avoids foreign-key changes across existing tables.
+- Email address for generated users: <studentid in lowercase>@charusat.edu.in (e.g., if student_id = CHS2023CSE001 -> chs2023cse001@charusat.edu.in).
+- Password policy: system generates a secure random temporary password when creating a user (or optionally creates a one-time login token link); temporary password emailed to student and must be changed on first login. Passwords are hashed (bcrypt/argon2).
+- "NA" handling: Any field that can be NA must accept literal string 'NA'. If field empty -> store NULL.
+- Reporting normalization: We will create an evaluations_reports table for each reporting entry and store a final_reports or final_project field. Aggregation logic uses up to 5 periodic reports (15 each) + final 25.
+- Partial reporting sets: Business rule choice — Grade is withheld until at least 3 periodic reports and final report exist OR T&P/HOD explicitly mark partial reports as accepted and compute scaled grade. Default: Withhold final grade until all 5 periodic reports OR HOD/T&P explicitly mark "compute-proportionally". See Business Rules section.
+- Export formats and date format: Use ISO YYYY-MM-DD for dates in Excel exports.
 
-2. System Overview & Scope
-Scope:
-- Manage users, roles, permissions and master data (companies, departments, courses).
-- Assign projects/training (company or in-house), singly or to groups.
-- Track evaluations (marks out of 15), attendance, progress notes, and internal exam grade.
-- Accept uploads: weekly/monthly reports, logbooks, offer letters, completion certificates.
-- Allow multiple placement records per student with final confirmation by T&P Officer.
-- Provide dashboards and reports for Admin, HOD, T&P and Guides.
-- Notifications by email and on-platform.
+--------------------------------------------------------------
+3. New & Updated Functional Requirements (FR codes)
 
-Out of scope (initial release):
-- Integration with external placement portals (unless requested).
-- Full LMS features (quizzes, grading beyond internal exam).
+A. Student Listing & Excel-ready Filters (FR-STDLIST-*)
+- FR-STDLIST-01: The Student listing screen must expose column selection and filters sufficient to export to Excel with "almost all details". Default export columns (recommended): student_id, name, email, roll_no, registration_no, department, course, batch, cgpa, training_status, project_id(s) (comma), guide_id(s) (comma), company(ies) (comma), placement_status (latest or list), attendance_percent (latest), last_evaluation_date, HOD_approval_status, custom_tags.
+- FR-STDLIST-02: Filtering options: department, batch, course, roll_no, registration_no, project_id, company, placement_status (OFFERED/JOINED/REJECTED/UNASSIGNED), guide_id, HOD approval status, training_status, cgpa range, attendance range, created_at range, custom tags, internship domain, project_domain.
+- FR-STDLIST-03: Export format: Excel (.xlsx) header row, date format YYYY-MM-DD, NA represented by literal 'NA', NULL represented by blank cell (or explicit string "<NULL>" if requested by admin in export settings). CSV optional with same rules.
+- FR-STDLIST-04: Admin/T&P can save filter presets and default export column sets.
 
-3. Stakeholders & User Roles
-- Admin: system owner, master-data manager, report generator, user & role manager.
-- T&P Officer: assigns Project IDs, updates placement(s), finalizes placements, reviews evaluations.
-- Head (HOD): views progress, comments/approves evaluations, may act as Guide.
-- Guide: assigned to students or groups; evaluates, enters marks (out of 15), grade, comments.
-- Student: views assigned project, uploads reports, sees placement status and history.
+B. T&P Officer Bulk Excel Upload & Account Generation (FR-TNP-BULK-*)
+- FR-TNP-BULK-01: T&P can upload an Excel (.xlsx/.csv) file containing student rows. The system performs a dry-run (validation) showing rows OK, rows with warnings (e.g., missing optional fields), and rows rejected (e.g., missing student_id). T&P may then confirm to import.
+- FR-TNP-BULK-02: Import rules:
+  - If student.student_id does not exist -> create student record and, if no user exists with the email, create associated user with email studentidinsmall@charusat.edu.in and generated secure password OR create user and send one-time login link.
+  - If students.student_id exists -> update student record fields from Excel according to chosen merge strategy (overwrite/merge/skip). If user exists, link user to student (students.user_id = users.id).
+  - If email derived from student_id already exists and is linked to another student -> import flags conflict and requires manual resolution.
+- FR-TNP-BULK-03: Generated user account values:
+  - email = lower(student_id) + '@charusat.edu.in'
+  - name = concatenation of first_name and last_name columns or 'NA' if missing
+  - password = secure random token (min 12 chars) hashed in DB; store ephemeral token for first-login; email sent to student with reset link.
+- FR-TNP-BULK-04: Import report saved to import_logs with rows created, updated, skipped, and error reasons; T&P can download import report (.xlsx/.csv).
+- FR-TNP-BULK-05: Security: only T&P/ Admin can perform import. All imports are auditable.
 
-4. Functional Requirements (by role)
+C. T&P Assignment Features (FR-TNP-ASSIGN-*)
+- FR-TNP-ASSIGN-01: T&P can assign Internal Guide (faculty) to students individually or in bulk.
+- FR-TNP-ASSIGN-02: Bulk assignment via UI filters or Excel (columns: student_id, guide_user_id). System validates guide exists and is eligible (role Guide/Faculty or role-combo).
+- FR-TNP-ASSIGN-03: When assigning projects: T&P creates project and system suggests the next Project ID. Suggestion algorithm returns next sequential number (see Section 8 Process Flows).
+- FR-TNP-ASSIGN-04: Bulk assignment supports conflict resolution rules:
+  - Option 1 (Default): Overwrite existing guide assignment only with explicit confirmation.
+  - Option 2: Append co-guides (if co_guide_ids permitted).
+- FR-TNP-ASSIGN-05: Bulk assignment may be based on Company/Project Domain/Department/Cgpa/Batch filters, and T&P can preview affected students before applying.
 
-4.1 Admin (FR-A-*)
-- FR-A-01: CRUD for users, assign roles (Admin, T&P, Head, Guide, Student) and assign departments.
-- FR-A-02: CRUD for master data: departments, courses, companies, training categories.
-- FR-A-03: Configure system-wide settings (max group size, project ID format, file upload limits).
-- FR-A-04: Generate PDF/CSV reports: placements, project statuses, evaluation summaries, guide workloads.
-- FR-A-05: View audit logs (user actions, uploads, evaluation edits).
+D. Student Self-Service Additions (FR-STD-SELF-*)
+- FR-STD-SELF-01: Gating: Students cannot accept project assignment or mark training as "started" until required fields are completed. Required field list configurable by Admin; suggested defaults: student_id, name, email, contact, department_id, batch, roll_no, registration_no, cgpa, emergency_contact, address.
+- FR-STD-SELF-02: Students can add/edit Internship/Placement records for their own durations: company (link to companies table or free text), external_guide {name, email, phone, designation}, start_date, end_date, stipend, position, responsibilities, files (offer letter etc.), team_members (list).
+- FR-STD-SELF-03: Adding team members:
+  - Students can add other students by student_id (validation). The system will record team mapping in project_students or reports as appropriate.
+  - External team members can be added as free-text entries with email/phone optional.
+- FR-STD-SELF-04: If student adds or modifies internship/company/external guide details, T&P receives notification; T&P may confirm/verify.
 
-4.2 T&P Officer (FR-T*)
-- FR-T-01: Create Project entries (auto-generate Project ID) — categories: Company Project or In-House Training.
-- FR-T-02: Assign projects to single students or groups; maintain project_students mapping.
-- FR-T-03: Update student_placements (create multiple entries), indicate final confirmation flag for final placement record.
-- FR-T-04: Review and comment on evaluation reports; mark placements as confirmed/unconfirmed.
-- FR-T-05: Search/filter students by placement status, project, company, department.
+E. Internal Guide / Faculty Features (FR-GUIDE-NEW-*)
+- FR-GUIDE-01: Guides can list their assigned projects and students grouped by project.
+- FR-GUIDE-02: Reporting entries:
+  - Guides can create multiple report entries per student per project: each entry stores report_number (1..N), reporting_date, marks_out_of_15 (decimal allowed), comments, evidence file(s).
+  - The UI forces report_number uniqueness per student/project (i.e., one Reporting 1, one Reporting 2, etc.). Guides can add at least up to 5 periodic reports; system enforces minimum 5 for "complete reporting" unless HOD/T&P relax.
+- FR-GUIDE-03: Final report marks:
+  - Guides can add final_project_report_mark (marks_out_of_25) for a student's final submission and attach final report file(s).
+- FR-GUIDE-04: Internal marks storage:
+  - System computes sum_of_periodic_reports (sum of up to 5 x 15 = 75) + final_project_report(25) to produce an internal_total_out_of_100 (or other mapping; see Business Rules for grade mapping).
+- FR-GUIDE-05: Guides can edit reports until locked; T&P/HOD may lock or request revision. Editing history kept.
+- FR-GUIDE-06: Guides can bulk-add reports via Excel (student_id, report_number, reporting_date, marks, comments).
 
-4.3 Head of Department (FR-H*)
-- FR-H-01: View dashboards: department progress, guide performance summary, students' statuses.
-- FR-H-02: Approve or comment on evaluation entries submitted by guides.
-- FR-H-03: Optionally act as Guide: can be assigned to projects and perform evaluations.
+F. HOD View & Filters (FR-HOD-NEW-*)
+- FR-HOD-01: HOD sees a reporting matrix per department: Reporting 1..5 columns, Final Report column, Total (sum), Grade, HOD Approval status.
+- FR-HOD-02: HOD can filter students by pending placement/training, pending reporting (missing any of reporting 1..5 or final), incomplete profiles, CGPA range, and more.
+- FR-HOD-03: HOD can request corrections or send reminders to guides/students for missing or invalid reports; HOD can export the matrix to Excel.
+- FR-HOD-04: HOD can mark “compute-proportionally” for partial reporting sets (if they choose to accept partial reports), otherwise grade remains withheld.
 
-4.4 Guide (FR-G*)
-- FR-G-01: Be assigned to one or more students/groups.
-- FR-G-02: Enter periodic evaluations (online/offline): marks (integer/decimal) out of 15.
-- FR-G-03: Enter attendance percentage, progress notes, observations, comments.
-- FR-G-04: Assign Internal Exam Grade using mapping (see Business Rules).
-- FR-G-05: Upload evaluation documents (feedback forms, rubrics).
-- FR-G-06: Edit evaluations until locked (locking policy configurable); HOD/T&P can request revision.
+G. Misc / Common (FR-COMMON-*)
+- FR-COMMON-01: Logging and audit: all bulk operations (bulk uploads, bulk assignments, bulk report imports) produce audit entries with import_id and summary.
+- FR-COMMON-02: Notifications: trigger emails/in-app notifications for account creation, project assignment, guide assignment, missing-report reminders, and import reports.
+- FR-COMMON-03: All new flows must respect role-based permissions (Laravel Policies/Gates).
 
-4.5 Student (FR-S*)
-- FR-S-01: View project details, assigned guide(s), and placement status/history.
-- FR-S-02: Upload weekly/monthly reports and training logs (file types configurable).
-- FR-S-03: Upload documents: Offer letter, Completion certificate, Joining letter, etc.
-- FR-S-04: Receive notifications (email & in-app); view evaluation feedback.
+--------------------------------------------------------------
+4. Business Rules & Grade/Reporting Reconciliation
+- Reporting Model:
+  - periodic_reports: up to 5 entries per student per project (marks_out_of_15 each).
+  - final_report: marks_out_of_25.
+  - internal_total = sum(periodic_reports up to 5) + final_report => maximum 75 + 25 = 100.
+- Grade Mapping (adapted to 0–100 internal_total):
+  - A+ : 93 – 100  (maps approximately to earlier 70–75 out of 75)
+  - A  : 80 – 92
+  - B+ : 67 – 79
+  - B  : 54 – 66
+  - C  : 10 – 53
+  - F  : 0 – 9
+- Rationale: The earlier SRS specified internal exam ranges (A+:70–75, etc., out of 75). Because reporting + final now total 100, we re-scale grade boundaries proportionally and choose human-friendly bands. Exact mapping is configurable by Admin; the default mapping above is recommended. The mapping should be stored in config/grade_mapping or DB for dynamic updates.
+- Partial reporting rule (configurable by Admin):
+  - Default behavior: Grade withheld until all 5 periodic reports + final report exist.
+  - Alternate (if HOD/T&P enabled): "compute-proportionally": compute (sum_of_reports_present / (number_of_required_reports_present * 15)) * 75 to normalize periodic reports to scale of 75, then add final 25 to form internal_total. This should be explicitly activated per student/project by HOD/T&P.
+- Student gating: "Start Training" button is blocked if any required field is NULL or 'NA' is present in required fields (configurable). The UI lists missing required fields with links to edit.
+- Student_id uniqueness: student.student_id is REQUIRED and must be unique; Excel import rejects or flags duplicates.
 
-4.6 Common Features
-- FR-C-01: Search and filter across students, projects, companies.
-- FR-C-02: Audit trail of changes to evaluations and placements.
-- FR-C-03: Pagination, sorting, CSV/PDF export for lists.
-- FR-C-04: Role-based dashboards.
+--------------------------------------------------------------
+5. Data Requirements — Schema Changes & New Tables
 
-5. Business Rules & Assumptions
-- Project ID: auto-generated, unique format e.g., TP-{YEAR}-{DEPT_CODE}-{0001}.
-- Project Category: Enum {COMPANY_PROJECT, IN_HOUSE}.
-- Project Type: group or single; group size configurable by Admin.
-- Evaluation marks: recorded out of 15 (store as decimal(4,2)), null allowed.
-- Internal Exam: maximum marks = 75 (this aligns to grade ranges provided). Internal exam marks stored out of 75. If internal exam is NA, store "NA".
-- Grade mapping (business rule): internal_exam_marks (0–75) map to grades:
-  - A+: 70–75
-  - A: 60–69
-  - B+: 50–59
-  - B: 40–49
-  - C: 10–39
-  - If marks < 10: "F" (Fail) (optional)
-  - If internal exam field is NA → grade can be "NA".
-- If any field is empty, treat as NULL.
-- For fields that can be NA, accept literal "NA" string.
-- A student may have multiple placement rows; T&P Officer marks one as confirmed_final = true (boolean). Only T&P can toggle final confirmation.
+Important: Preserve prior schema. The below items are additive or alterative. All new nullable fields accept NULL. Fields that accept 'NA' are VARCHAR/TEXT and allow string 'NA'.
 
-6. Non-functional Requirements
-- NFR-01: Platform: Laravel 10+ (PHP 8.1+), MySQL 8.x.
-- NFR-02: Authentication: use Laravel Sanctum for SPA or default session-based for server-rendered.
-- NFR-03: Performance: list endpoints respond under 500ms for <10k records; paginated endpoints required.
-- NFR-04: Scalability: prepare for sharding/replication (read-replica friendly).
-- NFR-05: Availability: 99.5% uptime target.
-- NFR-06: Security: HTTPS required, hashed passwords (bcrypt/argon2), RBAC via policies/gates.
-- NFR-07: Backups: daily DB backups, weekly full backups.
-- NFR-08: Logging: Laravel logging to files and optional external provider.
-- NFR-09: File storage: configurable local or S3-compatible; file virus scanning recommended.
+5.1 students (changes)
+- Add column student_id VARCHAR(64) NOT NULL UNIQUE (business identifier) — required for import flows.
+- Add column profile_completed TINYINT(1) DEFAULT 0 — computed flag (0 = incomplete, 1 = complete).
+- Add columns for emergency_contact, personal_email (optional), external_profiles JSON NULL.
+- Migration-level (Laravel migration pseudo):
+  - Schema::table('students', function (Blueprint $table) {
+      $table->string('student_id', 64)->unique()->after('id');
+      $table->boolean('profile_completed')->default(false)->after('academic_details');
+      $table->string('emergency_contact',50)->nullable()->after('contact');
+      $table->string('personal_email',255)->nullable()->after('email');
+      $table->json('external_profiles')->nullable()->after('extra_profile');
+    });
 
-7. Data Requirements — Logical Data Model & Tables (MySQL)
-Every nullable field must accept NULL. Wherever the requirement allows "NA", the column accepts the text "NA" (VARCHAR/TEXT).
+5.2 users (no structural change required), but ensure email unique and nullable rules match import logic.
 
-Notes:
-- Use Laravel migrations to create tables with proper constraints.
-- Use InnoDB and foreign keys.
+5.3 evaluations_reports (new)
+- Purpose: store each periodic report (reporting entries).
+- Columns:
+  - id BIGINT PK
+  - project_id BIGINT NULL (FK projects.id)
+  - student_id BIGINT NOT NULL (FK students.id)
+  - student_student_id VARCHAR(64) NULL (denormalized for quick lookup)
+  - guide_id BIGINT NULL (FK users.id)
+  - report_number TINYINT NOT NULL (1..N)
+  - reporting_date DATE NULL
+  - marks_out_of_15 DECIMAL(4,2) NULL
+  - comments TEXT NULL
+  - evidence JSON NULL (file paths + meta)
+  - locked TINYINT(1) DEFAULT 0
+  - created_by BIGINT NULL
+  - created_at, updated_at
+- Unique constraint: UNIQUE(project_id, student_id, report_number)
+- Migration snippet:
+  - Schema::create('evaluations_reports', function (Blueprint $table) {
+      $table->id();
+      $table->foreignId('project_id')->nullable()->constrained('projects')->nullOnDelete();
+      $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+      $table->string('student_student_id',64)->nullable()->index();
+      $table->foreignId('guide_id')->nullable()->constrained('users')->nullOnDelete();
+      $table->tinyInteger('report_number')->unsigned();
+      $table->date('reporting_date')->nullable();
+      $table->decimal('marks_out_of_15',4,2)->nullable();
+      $table->text('comments')->nullable();
+      $table->json('evidence')->nullable();
+      $table->boolean('locked')->default(false);
+      $table->foreignId('created_by')->nullable()->constrained('users');
+      $table->timestamps();
+      $table->unique(['project_id','student_id','report_number']);
+    });
 
-7.1 users
-- id: BIGINT UNSIGNED AUTO_INCREMENT PK
-- name: VARCHAR(255) NOT NULL
-- email: VARCHAR(255) NOT NULL UNIQUE
-- password: VARCHAR(255) NOT NULL
-- phone: VARCHAR(20) NULL
-- role_id: BIGINT UNSIGNED NULL (deprecated if using roles table) — accept NULL
-- department_id: BIGINT UNSIGNED NULL
-- is_active: TINYINT(1) DEFAULT 1
-- extra_profile: JSON NULL (for NA-capable fields, can store "NA")
-- created_at, updated_at, deleted_at (soft deletes)
+5.4 final_project_reports (new) — alternative to storing final report in evaluations table
+- Columns:
+  - id, project_id, student_id, guide_id, marks_out_of_25 DECIMAL(5,2) NULL, comments, files JSON, locked, created_by, timestamps
+- Migration:
+  - Schema::create('final_project_reports', function (Blueprint $table) { ... });
 
-7.2 roles
-- id, name (Admin, TnP, Head, Guide, Student), guard_name, created_at, updated_at
+5.5 student_team_members (new)
+- Purpose: store team member links; supports students and external members.
+- Columns:
+  - id, project_id, student_id (FK) NULL, team_member_student_id (links other students.student_id) NULL, external_name VARCHAR NULL, external_email VARCHAR NULL, role VARCHAR NULL, created_by, timestamps
+- Migration example included below.
 
-7.3 permissions
-- id, name, guard_name, created_at, updated_at
+5.6 bulk_import_logs (new)
+- Purpose: log results of Excel imports
+- Columns:
+  - id, import_type ENUM('STUDENTS','ASSIGNMENT','REPORTS'), uploaded_by BIGINT, filename, total_rows, created_count, updated_count, skipped_count, errors JSON, status ENUM('DRY_RUN','COMPLETED','FAILED'), created_at, updated_at
 
-(If using spatie/laravel-permission, maintain model tables and relationships.)
+5.7 assignment_requests / bulk_assignments (new)
+- Purpose: track bulk assignments and actions
+- Columns:
+  - id, criteria JSON, action_type ENUM('GUIDE_ASSIGN','PROJECT_ASSIGN'), assigned_by, affected_count, applied boolean, import_log_id FK, timestamps
 
-7.4 departments
-- id, code VARCHAR(20) NULL (e.g., CSE), name VARCHAR(255), head_user_id BIGINT NULL, created_at, updated_at
+5.8 notes on foreign keys & indexes
+- Ensure performance indexes on evaluations_reports.student_id, project_id, guide_id, report_number.
+- Denormalize student_student_id (string) on report tables to simplify Excel exports and imports.
 
-7.5 students (detailed)
-- id PK
-- user_id (FK users.id) NULL — linking to user account; can be NULL for legacy/import
-- roll_no VARCHAR(50) NULL
-- registration_no VARCHAR(50) NULL
-- dob DATE NULL
-- gender ENUM('M','F','O') NULL
-- father_name VARCHAR(255) NULL
-- mother_name VARCHAR(255) NULL
-- address TEXT NULL
-- contact VARCHAR(50) NULL
-- email VARCHAR(255) NULL
-- department_id BIGINT NULL
-- course VARCHAR(100) NULL
-- batch YEAR NULL
-- cgpa DECIMAL(4,2) NULL
-- academic_details JSON NULL
-- training_status ENUM('NOT_ASSIGNED','IN_TRAINING','COMPLETED') DEFAULT 'NOT_ASSIGNED'
-- created_at, updated_at
+5.9 NA/NULL rules
+- Columns that may accept NA: role_in_project, comments, external fields. Use VARCHAR/TEXT to accept 'NA'.
+- Columns left empty in import become NULL.
 
-7.6 companies
-- id PK
-- name VARCHAR(255) NOT NULL
-- type ENUM('RECRUITER','TRAINER','NA') DEFAULT 'RECRUITER'
-- address TEXT NULL
-- contact_person VARCHAR(255) NULL
-- contact_email VARCHAR(255) NULL
-- website VARCHAR(255) NULL
-- notes TEXT NULL
-- created_at, updated_at
+--------------------------------------------------------------
+6. API Endpoints — new & updated (routes & shapes)
 
-7.7 projects
-- id PK
-- project_id VARCHAR(50) UNIQUE NOT NULL (auto-generated TP-YYYY-DEP-XXXX)
-- title VARCHAR(255) NULL
-- description TEXT NULL
-- category ENUM('COMPANY_PROJECT','IN_HOUSE') NOT NULL
-- company_id BIGINT NULL (nullable when IN_HOUSE)
-- guide_id BIGINT NULL (FK users.id) — nullable; HOD/T&P may also be guide
-- co_guide_ids JSON NULL (for multiple guides) — optional
-- start_date DATE NULL
-- end_date DATE NULL
-- status ENUM('OPEN','IN_PROGRESS','COMPLETED','CANCELLED') DEFAULT 'OPEN'
-- is_group TINYINT(1) DEFAULT 0
-- max_group_size INT NULL
-- created_by BIGINT NULL
-- created_at, updated_at
-
-7.8 project_students (many-to-many mapping)
-- id PK
-- project_id BIGINT NOT NULL FK -> projects.id
-- student_id BIGINT NOT NULL FK -> students.id
-- assigned_on DATETIME NULL
-- role_in_project VARCHAR(100) NULL (e.g., "Leader", can be "NA")
-- UNIQUE(project_id, student_id)
-
-7.9 student_placements
-- id PK
-- student_id BIGINT NOT NULL FK -> students.id
-- company_id BIGINT NULL
-- project_id BIGINT NULL
-- offer_date DATE NULL
-- status ENUM('OFFERED','JOINED','REJECTED','WITHDRAWN','NA') DEFAULT 'OFFERED'
-- package DECIMAL(10,2) NULL
-- position VARCHAR(255) NULL
-- joining_date DATE NULL
-- documents JSON NULL (paths + meta)
-- confirmed_final TINYINT(1) DEFAULT 0 -- only toggled by T&P Officer
-- remarks TEXT NULL
-- created_by BIGINT NULL
-- created_at, updated_at
-
-7.10 evaluations
-- id PK
-- project_id BIGINT NULL FK
-- student_id BIGINT NULL FK
-- guide_id BIGINT NULL FK
-- evaluation_date DATE NULL
-- mode ENUM('ONLINE','OFFLINE','NA') DEFAULT 'ONLINE'
-- marks_out_of_15 DECIMAL(4,2) NULL -- store marks the Guide enters
-- internal_exam_marks DECIMAL(5,2) NULL -- expectation: out of 75; accept NULL/NA
-- internal_exam_grade VARCHAR(5) NULL -- 'A+', 'A', etc. Accept 'NA'
-- attendance_percent DECIMAL(5,2) NULL
-- remarks TEXT NULL
-- locked TINYINT(1) DEFAULT 0
-- approved_by_head TINYINT(1) DEFAULT 0
-- head_comments TEXT NULL
-- created_at, updated_at
-
-7.11 reports_logs (uploads)
-- id PK
-- student_id BIGINT NULL
-- project_id BIGINT NULL
-- uploaded_by BIGINT NULL (user id)
-- file_path VARCHAR(1024) NULL
-- original_name VARCHAR(255) NULL
-- file_type VARCHAR(100) NULL
-- period_start DATE NULL
-- period_end DATE NULL
-- status ENUM('PENDING','REVIEWED','REJECTED') DEFAULT 'PENDING'
-- notes TEXT NULL
-- created_at, updated_at
-
-7.12 notifications
-- id PK
-- user_id BIGINT NULL
-- title VARCHAR(255) NULL
-- body TEXT NULL
-- link VARCHAR(1024) NULL
-- is_read TINYINT(1) DEFAULT 0
-- channel ENUM('IN_APP','EMAIL','SMS') DEFAULT 'IN_APP'
-- sent_at DATETIME NULL
-- created_at, updated_at
-
-7.13 audits / logs
-- id PK
-- user_id BIGINT NULL
-- action VARCHAR(255) NOT NULL
-- resource_type VARCHAR(100) NULL
-- resource_id BIGINT NULL
-- old_value JSON NULL
-- new_value JSON NULL
-- created_at DATETIME
-
-Indexes + Foreign Keys
-- Add FK constraints for FK fields. Add indexes for frequently queried columns (student_id, project_id, company_id, guide_id, status fields, created_at).
-
-Nullability and "NA"
-- Wherever a field can be "NA" (e.g., role_in_project, remarks, company fields for in-house), accept either NULL or the string 'NA'. Enforce via front-end UI choices and validation rules: if user selects "NA" the literal "NA" will be stored (not NULL).
-
-8. API Endpoints (Laravel REST resources)
-Use resource controllers and route names. Suggested endpoints (examples):
-
-Auth
+Auth & User
 - POST /api/login
 - POST /api/logout
 - GET /api/me
 
-Users & Roles (admin-only)
-- GET /api/admin/users
-- POST /api/admin/users
-- PUT /api/admin/users/{id}
-- DELETE /api/admin/users/{id}
-- GET /api/admin/roles
-- POST /api/admin/roles
+T&P / Admin Bulk Upload
+- POST /api/admin/import/students
+  - Description: Upload Excel/CSV; supports dry-run parameter ?dry_run=true
+  - Request: multipart/form-data file: students.xlsx, body: {dry_run: bool, merge_strategy: 'overwrite'|'merge'|'skip'}
+  - Response (dry-run): { import_id, total_rows, valid_rows, invalid_rows: [ {row_number, reason} ] }
+  - Response (confirmed import): { import_id, total_rows, created_count, updated_count, skipped_count, errors: [...] }
+- GET /api/admin/imports/{import_id}/report
+  - Response: link to generated import report .xlsx & JSON summary
 
-Students
-- GET /api/students
-- POST /api/students
-- GET /api/students/{id}
-- PUT /api/students/{id}
-- GET /api/students/{id}/placements
-- GET /api/students/{id}/evaluations
-- GET /api/students/{id}/reports
+Bulk Assignment
+- POST /api/tp/bulk/assign-guides
+  - Request: { mode: 'filters'|'upload', filters: {...}, upload_file: file(optional), overwrite_existing: bool }
+  - Response: { assignment_id, preview_count, applied_count, conflicts: [ {student_id, existing_guide_id} ] }
 
-Projects
-- GET /api/projects
-- POST /api/projects (auto-generate project_id)
-- GET /api/projects/{id}
-- PUT /api/projects/{id}
-- POST /api/projects/{id}/assign-students (accept array)
-- DELETE /api/projects/{id}/student/{student_id}
+Project ID Suggestion
+- GET /api/tp/projects/next-project-id?dept=CSE&year=2025&category=COMPANY_PROJECT
+  - Response: { suggested_project_id: "TP-2025-CSE-0042" }
 
-Evaluations
-- GET /api/evaluations
-- POST /api/evaluations
-- PUT /api/evaluations/{id} (if not locked)
-- POST /api/evaluations/{id}/approve (HOD)
-- POST /api/evaluations/{id}/lock (Guide/Admin)
+Reporting (Guide endpoints)
+- POST /api/guides/reports/import (bulk via Excel)
+- POST /api/guides/reports
+  - Body: { project_id, student_id (student_id string), report_number, reporting_date (YYYY-MM-DD), marks_out_of_15, comments, evidence_files[] }
+  - Response: created report payload
+- PUT /api/guides/reports/{id} (if not locked)
+- POST /api/guides/final-report
+  - Body: { project_id, student_id, marks_out_of_25, comments, files[] }
 
-Placements
-- GET /api/placements
-- POST /api/placements
-- PUT /api/placements/{id}
-- POST /api/placements/{id}/confirm-final (T&P only)
+Student self-service
+- PUT /api/students/{student_id}/complete-profile
+  - Body: fields to update
+  - Response: { profile_completed: bool, missing_fields: [ ... ] }
+- POST /api/students/{student_id}/internships
+  - Body: { company_id or free_text_company, external_guide: { name, email, phone, designation }, start_date, end_date, stipend, role, documents[] }
+- POST /api/students/{student_id}/team-members
+  - Body: { project_id, student_ids: [ ... ], externals: [ {name,email,phone,designation} ] }
 
-Reports / Uploads
-- POST /api/uploads/report (multipart) — store file, metadata
-- GET /api/uploads/{id}/download
-
-Notifications
-- GET /api/notifications
-- POST /api/notifications/send (Admin/TnP to trigger)
+HOD endpoints
+- GET /api/hod/department/{dept_id}/reporting-matrix?filters...
+  - Response: array of students with fields: reporting1..report5 (marks+date), final_report, total, grade, profile_completed, placement_status
 
 Exports
-- GET /api/export/students (CSV/PDF)
-- GET /api/export/evaluations
+- GET /api/export/students?filters...&columns=...
+  - Response: attachment .xlsx
 
-All endpoints protected by middleware: auth:sanctum and authorization via policies/gates. Use request validation classes.
+Notifications
+- POST /api/notifications/send (Admin/T&P/HOD triggers)
 
-9. UI / UX — Screens & Workflows
-Primary screens:
-- Login / Forgot Password
-- Admin Dashboard (user stats, active projects, pending placements)
-- T&P Dashboard (projects needing assignments, pending confirmations)
-- HOD Dashboard (department progress, pending approvals)
-- Guide Dashboard (assigned students, pending evaluations)
-- Student Dashboard (my project(s), uploads, placement history)
-- Project Details (project info, students, guide, documents)
-- Student Profile (master data, placements, evaluations, uploads)
-- Evaluation Form (marks out of 15, internal exam marks, grade dropdown or computed)
-- Upload Form (file chooser, tag as weekly/monthly/logbook)
-- Notifications panel
+All endpoints require authentication (sanctum/session) and permission checks.
 
-Workflows:
-- T&P creates a project → optionally assigns students → Guide notified → Guides add evaluations and upload feedback → HOD reviews → T&P updates placements → Student uploads offer letter → T&P confirms final placement.
-- When Guide enters evaluation marks, system computes grade (or Guide enters grade). HOD may approve.
+--------------------------------------------------------------
+7. UI / UX Changes & Excel Templates
 
-10. Security, Authentication & Authorization
-- Authentication: Laravel Sanctum (for SPA/mobile) or session-based.
-- Passwords hashed (bcrypt/argon2).
-- 2FA is optional for Admin/T&P.
-- Authorization: Laravel Policies & Gates, or use spatie/laravel-permission to map roles to permissions.
-- CSRF protection for web routes.
-- File uploads validated by MIME type and size; stored outside web root or protected by signed URLs.
-- Input validation & sanitization via Laravel Form Requests.
-- Rate limiting for sensitive endpoints.
+7.1 Student Listing & Export UI
+- Top bar: Column selector (checkbox list), saved presets, Export button (.xlsx/.csv)
+- Filters panel with fields described in FR-STDLIST-02
+- Row context menu: view student, assign guide, export single row
 
-11. File Uploads & Storage
-- Supported types: PDF, DOC/DOCX, ZIP, JPG/PNG (configurable).
-- Max file size: configurable by Admin (default 20MB).
-- Storage driver: local or S3.
-- Store metadata in reports_logs: original_name, storage_path, mime, uploaded_by, period.
-- Virus/mime checking recommended on upload.
-- If the file field is left empty → NULL.
+Excel Export Representation
+- Date format: YYYY-MM-DD
+- NA representation: 'NA' (literal)
+- NULL representation: blank cell (by default) or special marker if chosen
+- Default columns (recommended):
+  - Student ID, Name, Email, Personal Email, Phone, Department, Course, Batch, Roll No, Registration No, CGPA, Training Status, Project IDs (comma-separated), Guide IDs (comma-separated), Companies (comma-separated), Latest Placement Status, Attendance Percent (latest), Last Evaluation Date, Profile Completed (Y/N), HOD Approval, Created At
 
-12. Notifications
-- Channels: in-app (notifications table + UI), email (SMTP via Laravel Mail).
-- Events:
-  - Project assigned to Guide/Student
-  - New evaluation posted
-  - Evaluation approved/rejected
-  - Placement offered/confirmed
-  - Document uploaded (T&P / Guide notified)
-- Notification templates configurable.
+7.2 Bulk Student Upload Template (students_bulk_upload.xlsx)
+- Header row (exact column headers, case-insensitive):
+  - student_id (REQUIRED)
+  - first_name
+  - last_name
+  - email (optional — if present, will be validated; otherwise auto-generated)
+  - phone
+  - roll_no
+  - registration_no
+  - department_code or department_id
+  - course
+  - batch
+  - cgpa
+  - dob (YYYY-MM-DD)
+  - gender (M/F/O/NA)
+  - address
+  - emergency_contact
+  - personal_email
+  - extra_profile_json (optional)
+- Sample row:
+  - CHS2025CSE001,John,Doe,,9876543210,23CSE001,REG2025CSE001,CSE,B.Tech,2025,8.32,2003-05-06,M,"123 Street, City",9876512345,john.personal@example.com,"{""hostel"":""NA"",""scholarship"":""Yes""}"
 
-13. Reporting & Dashboards
-- Guide-wise progress summary: number of students, average marks, pending evaluations.
-- Student-wise evaluation summary: list of evaluations, marks, grades, attendance, placement status.
-- HOD overview: department aggregated stats, guide productivity, placement rates.
-- Admin reports: historical placements, company-wise hires, export to CSV/PDF.
+7.3 Bulk Assignment Template (assignments_bulk_upload.xlsx)
+- Header row:
+  - student_id (REQUIRED)
+  - guide_user_id (REQUIRED) or guide_email (alternative)
+  - project_id (optional)
+  - overwrite_existing (true/false optional)
+- Sample:
+  - CHS2025CSE001,45,TP-2025-CSE-0042,true
 
-14. Testing Strategy & Acceptance Criteria
-Testing types:
-- Unit tests (Laravel/PHPUnit) for models and business rules (grade calculations, placement finalization).
-- Feature tests for controllers and APIs (login, CRUD, upload).
-- Integration tests (file storage, email).
-- Security tests (RBAC enforcement).
-Acceptance criteria (examples):
-- Admin can create a project and project_id follows format.
-- Guide can enter marks out of 15; records saved and visible to student.
-- T&P can add multiple placements for student and set one as confirmed_final.
-- If a field left empty → DB record shows NULL.
-- If a field is set to NA → DB stores string 'NA'.
-- File upload test: upload stored, metadata saved, download link works.
-- Notifications dispatched on assignment and placement confirmation.
+7.4 Bulk Report Upload Template (reports_bulk_upload.xlsx)
+- Header row:
+  - student_id (REQUIRED)
+  - project_id
+  - report_number (1..5)
+  - reporting_date (YYYY-MM-DD)
+  - marks_out_of_15
+  - comments
+- Sample:
+  - CHS2025CSE001,TP-2025-CSE-0042,1,2025-06-15,12,"Good progress"
 
-15. Deployment & Operational Considerations
-- Environment variables: DB credentials, mail driver, storage driver, APP_KEY.
-- Migrations & seeders to bootstrap roles and default admin user.
-- Scheduler (cron) for nightly reports/backup and notifications.
-- Backups: dump DB daily, rotate 7 days.
-- Monitoring: set up uptime & error monitoring (Sentry / Bugsnag).
-- CI/CD: run tests on push, migrations on deploy, zero-downtime recommended.
+7.5 Export & Import validation rules summary
+- Required fields flagged in UI.
+- Date formats validated strictly (YYYY-MM-DD).
+- student_id must be unique or present.
+- Department must map to existing department_id (or code mapping allowed).
+- Failures logged with row numbers and reasons.
 
-16. Appendix
+--------------------------------------------------------------
+8. Process Flows & Pseudocode
 
-16.1 ER Diagram (textual)
-users --< roles (via pivot)  
-departments --< students  
-students --< project_students >-- projects  
-projects --< evaluations  
-students --< student_placements  
-students --< reports_logs  
-users --< audits
+8.1 Auto user account generation from Excel (pseudocode)
+- Input: parsed_row (dictionary)
+- Precondition: parsed_row.student_id exists
+- Steps:
+  1. studentId = parsed_row['student_id'].trim()
+  2. Start DB transaction
+  3. student = Students::where('student_id', studentId)->first()
+  4. if not student:
+       student = Students::create({ student_id: studentId, ...other fields..., created_by: uploader_id })
+     else:
+       update student fields according to merge_strategy
+  5. email = trimmedLower(studentId) + '@charusat.edu.in'
+  6. user = Users::where('email', email)->first()
+  7. if not user:
+       tempPassword = Str::random(16)
+       user = Users::create({ name: parsed_name_or_NA, email: email, password: Hash::make(tempPassword), is_active:1 })
+       sendEmail(to: email, subject: 'Account Created', body: templateWithOneTimeLinkOrTempPassword(tempPassword))
+     else:
+       link user if student.user_id is null
+  8. student.user_id = user.id; student.save()
+  9. commit transaction
+  10. log import status per row
+- Note: If email derived already exists and belongs to different student_id -> flag for manual resolution.
 
-16.2 Grade Calculation (business logic)
-- internal_exam_max = 75
-- If internal_exam_marks is NOT NULL and not 'NA':
-  - if 70 <= marks <= 75 → grade = 'A+'
-  - if 60 <= marks <= 69 → grade = 'A'
-  - if 50 <= marks <= 59 → grade = 'B+'
-  - if 40 <= marks <= 49 → grade = 'B'
-  - if 10 <= marks <= 39 → grade = 'C'
-  - else grade = 'F'
-- Optionally combine marks_out_of_15 and internal_exam_marks to compute overall performance for dashboards. Example: weight internal exam 75 points + evaluation 15 points => total out of 90.
+8.2 Project ID next-sequence suggestion algorithm (pseudocode)
+- Format default: TP-{YEAR}-{DEPT_CODE}-{NNNN} (NNNN zero-padded 4 digits)
+- Input: dept_code (optional), year (default current year), category
+- Steps:
+  1. basePrefix = "TP-" + year + "-" + strtoupper(dept_code or 'GEN')
+  2. Query: latest = projects->where('project_id','like', basePrefix+"%")->orderByDesc('created_at')->first()
+  3. if latest:
+       extract numericSuffix = parseInt(last 4 digits)
+       next = numericSuffix + 1
+     else:
+       next = 1
+  4. suggestedId = basePrefix + "-" + padLeft(next,4,'0')
+  5. Return suggestedId
+- Example: latest TP-2025-CSE-0042 => suggestion TP-2025-CSE-0043
 
-16.3 Sample MySQL CREATE TABLE (evaluation) — illustrative migration schema
-```sql
-CREATE TABLE `evaluations` (
-  `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  `project_id` BIGINT NULL,
-  `student_id` BIGINT NULL,
-  `guide_id` BIGINT NULL,
-  `evaluation_date` DATE NULL,
-  `mode` ENUM('ONLINE','OFFLINE','NA') DEFAULT 'ONLINE',
-  `marks_out_of_15` DECIMAL(4,2) NULL,
-  `internal_exam_marks` DECIMAL(5,2) NULL,
-  `internal_exam_grade` VARCHAR(5) NULL,
-  `attendance_percent` DECIMAL(5,2) NULL,
-  `remarks` TEXT NULL,
-  `locked` TINYINT(1) DEFAULT 0,
-  `approved_by_head` TINYINT(1) DEFAULT 0,
-  `head_comments` TEXT NULL,
-  `created_at` TIMESTAMP NULL,
-  `updated_at` TIMESTAMP NULL,
-  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
-  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-  FOREIGN KEY (guide_id) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+8.3 Bulk assignment algorithm (filters & matching)
+- Input: filterCriteria (company, project_domain, cgpa_range, batch, dept, tag), guide_id, overwrite boolean
+- Steps:
+  1. candidate_students = Students::query()->applyFilters(filterCriteria)->get()
+  2. preview_count = candidate_students.count()
+  3. For each student in candidate_students:
+       existingGuide = ProjectStudent mapping or projects.guide_id where project assigned
+       if existingGuide and not overwrite:
+           add to conflicts list
+           continue
+       else:
+           create/ update project_students mapping or set projects.guide_id accordingly
+           notify guide and student
+  4. return { preview_count, applied_count, conflicts }
+- Excel bulk assignment uses the same validation logic in batch, transactional per-row with per-row error logging.
+
+8.4 Reporting storage & aggregation
+- When guide posts a report entry:
+  - Validate report_number unique per project+student
+  - Save to evaluations_reports
+  - Trigger recompute of sums:
+    - periodic_sum = evaluations_reports->where(student_id,project_id)->takeUpTo(5)->sum(marks_out_of_15)
+    - final_mark = final_project_reports->where(student_id,project_id)->first()->marks_out_of_25
+    - if scoring_strategy == 'all_5_required' and periodic_count < 5 or final_mark is null -> internal_status = 'INCOMPLETE'
+    - else if 'compute_proportionally' -> normalized_periodic = (periodic_sum / (periodic_count * 15)) * 75 ; internal_total = normalized_periodic + final_mark
+    - else internal_total = periodic_sum + final_mark (if periodic_count == 5)
+  - Map internal_total to grade via grade_mapping table/config and store computed grade in evaluations_summary table (or in projects_students join row).
+  - Notify HOD/T&P if evaluation complete.
+
+--------------------------------------------------------------
+9. Acceptance Criteria & Test Cases (actionable)
+
+9.1 Bulk Student Upload & Account Generation
+- AC-BULK-01: Given a well-formed Excel containing 10 unique student rows, after confirmed import:
+  - 10 student records exist with corresponding students.student_id values.
+  - 10 user accounts exist with emails studentidinsmall@charusat.edu.in.
+  - Each user receives an email containing a secure one-time login link or temporary password.
+  - Import log shows created_count = 10, updated_count = 0, skipped_count = 0.
+- Test steps: run import in dry-run; confirm validation OK; run import; verify DB rows + email receipts (can be intercepted in test env).
+
+9.2 Conflict Handling on Bulk Upload
+- AC-BULK-02: Given an Excel with duplicate student_id rows or a row with missing student_id:
+  - The import dry-run marks duplicates and missing student_id rows as invalid with reasons.
+  - The confirmed import does not create records for invalid rows and logs errors correctly.
+
+9.3 Project ID Suggestion
+- AC-PROJECTID-01: If existing projects for TP-2025-CSE run up to TP-2025-CSE-0045, GET /api/tp/projects/next-project-id?dept=CSE&year=2025 returns TP-2025-CSE-0046.
+
+9.4 Bulk Guide Assignment
+- AC-BULK-GUIDE-01: Using filters (department=CSE, cgpa>=7.0), preview shows 20 candidates; performing bulk assignment with overwrite=false only assigns students without existing guide; conflicts list includes students with pre-existing guides.
+
+9.5 Guide Reporting (periodic + final)
+- AC-GUIDE-REPORT-01: Guide submits 5 reports for student with marks 12, 13.5, 14, 15, 11 and final project mark 22. System computes:
+  - periodic_sum = 12 + 13.5 + 14 + 15 + 11 = 65.5 (out of 75)
+  - internal_total = 65.5 + 22 = 87.5 (out of 100)
+  - Grade mapping yields 'A' (per default mapping 80–92).
+- AC-GUIDE-REPORT-02: If only 3 periodic reports and final present and default "all_5_required" policy, final grade withheld and status INCOMPLETE.
+
+9.6 Student Gating
+- AC-STUDENT-GATE-01: Student attempts to start training but profile_missing required field roll_no -> UI blocks action, shows missing field list; after student fills roll_no, action allowed.
+
+9.7 HOD Reporting Matrix & Filters
+- AC-HOD-01: HOD filters for "pending reporting" returns all students with less than 5 periodic reports or missing final mark. Export yields .xlsx with Reporting 1..5 columns showing marks/date or blank if missing.
+
+9.8 Excel Export NA/NULL handling
+- AC-EXPORT-01: Export of student where company is NA and some field NULL results in Excel cell for company showing 'NA' and blank cell for NULL field.
+
+--------------------------------------------------------------
+10. Migration & Data-migration Considerations
+- Add students.student_id for all existing students:
+  - Migration script to populate student_id from existing roll_no or registration_no (preferred) or generate deterministic value (e.g., 'LEGACY-' + id) — admin must review.
+- Create evaluations_reports and final_project_reports tables; backfill historic evaluations from existing evaluations table if any: map single evaluations entries to periodic report 1 or final report as appropriate (requires manual mapping).
+- Run import in staging first; provide rollback SQL for migrations that might affect production.
+- Add config flag to toggle strict "student_id required" mode for backward compatibility during migration.
+
+--------------------------------------------------------------
+11. Implementation Plan (prioritized steps with complexity & rough time estimates)
+
+Priority 1 — Core Data + Import & Account Generation
+1. Add students.student_id column, profile_completed and emergency columns; migration + backfill script (Complexity: Medium; Estimate: 6-12 hours)
+2. Create bulk_import_logs and import infrastructure (Complexity: Medium; Estimate: 6-10 hours)
+3. Implement POST /api/admin/import/students with dry-run and confirmed import flows (Complexity: High; Estimate: 12-24 hours)
+4. Implement email / one-time link mechanics for user creds (Complexity: Medium; Estimate: 6-12 hours)
+
+Priority 2 — Reporting Model & Aggregation
+5. Create evaluations_reports and final_project_reports tables + migration (Complexity: Medium; Estimate: 6-12 hours)
+6. Guides UI + API endpoints for adding/editing reports (Complexity: Medium; Estimate: 12-20 hours)
+7. Aggregation service to compute internal_total & grade (Complexity: Medium; Estimate: 6-10 hours)
+
+Priority 3 — Bulk Assignment & Project ID Suggestion
+8. Implement project ID suggestion API (Complexity: Low; Estimate: 2-4 hours)
+9. Bulk assignment UI and API (filters + preview + confirm) (Complexity: High; Estimate: 12-24 hours)
+
+Priority 4 — Student Gating & HOD Matrix
+10. Student profile gating UI & API (Complexity: Low; Estimate: 4-8 hours)
+11. HOD reporting matrix UI + export (Complexity: Medium; Estimate: 10-16 hours)
+
+Priority 5 — Extras & Hardening
+12. Excel templates, validation rules, import logs exporter, audits; QA & testing (Complexity: Medium; Estimate: 8-16 hours)
+13. Documentation, seeders, and migration runbooks (Complexity: Low; Estimate: 4-8 hours)
+
+Total approximate implementation: 80–150 hours depending on existing codebase, test coverage, and UI complexity.
+
+--------------------------------------------------------------
+12. Appendix — sample Excel rows, migration snippets, example controller endpoint
+
+12.1 Sample bulk student upload header & sample CSV row (CSV representation)
+Header:
+student_id,first_name,last_name,email,phone,roll_no,registration_no,department_code,course,batch,cgpa,dob,gender,address,emergency_contact,personal_email,extra_profile_json
+
+Sample row:
+CHS2025CSE001,John,Doe,,9876543210,23CSE001,REG2025CSE001,CSE,B.Tech,2025,8.32,2003-05-06,M,"123 Street, City",9876512345,john.personal@example.com,"{""hostel"":""B6"",""scholarship"":""NA""}"
+
+12.2 Example Laravel migration snippet (students table alteration)
+```php
+// migration: 2025_12_09_add_student_id_and_profile_fields_to_students.php
+public function up()
+{
+    Schema::table('students', function (Blueprint $table) {
+        $table->string('student_id', 64)->unique()->after('id');
+        $table->boolean('profile_completed')->default(false)->after('academic_details');
+        $table->string('emergency_contact',50)->nullable()->after('contact');
+        $table->string('personal_email',255)->nullable()->after('email');
+        $table->json('external_profiles')->nullable()->after('extra_profile');
+    });
+}
 ```
 
-16.4 Migration & Seeder Notes
-- Seeder to create default roles and an Admin account.
-- Seeder to add sample departments, companies for demo.
-- Provide sample users and a demo dataset for acceptance testing.
+12.3 Example Laravel migration snippet (evaluations_reports)
+```php
+// migration: 2025_12_09_create_evaluations_reports_table.php
+public function up()
+{
+    Schema::create('evaluations_reports', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('project_id')->nullable()->constrained('projects')->nullOnDelete();
+        $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+        $table->string('student_student_id',64)->nullable()->index();
+        $table->foreignId('guide_id')->nullable()->constrained('users')->nullOnDelete();
+        $table->tinyInteger('report_number')->unsigned();
+        $table->date('reporting_date')->nullable();
+        $table->decimal('marks_out_of_15',4,2)->nullable();
+        $table->text('comments')->nullable();
+        $table->json('evidence')->nullable();
+        $table->boolean('locked')->default(false);
+        $table->foreignId('created_by')->nullable()->constrained('users');
+        $table->timestamps();
+        $table->unique(['project_id','student_id','report_number']);
+    });
+}
+```
 
-16.5 Glossary
-- T&P: Training & Placement
-- HOD / Head: Head of Department
-- Guide: Faculty mentor or industrial guide
-- Project: training engagement (company or in-house)
-- Placement: job offer / internship record for a student
+12.4 Example Laravel migration snippet (final_project_reports)
+```php
+public function up()
+{
+    Schema::create('final_project_reports', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('project_id')->nullable()->constrained('projects')->nullOnDelete();
+        $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+        $table->foreignId('guide_id')->nullable()->constrained('users')->nullOnDelete();
+        $table->decimal('marks_out_of_25',5,2)->nullable();
+        $table->text('comments')->nullable();
+        $table->json('files')->nullable();
+        $table->boolean('locked')->default(false);
+        $table->foreignId('created_by')->nullable()->constrained('users');
+        $table->timestamps();
+        $table->unique(['project_id','student_id']);
+    });
+}
+```
 
----
+12.5 Example migration snippet (bulk_import_logs)
+```php
+public function up()
+{
+    Schema::create('bulk_import_logs', function (Blueprint $table) {
+        $table->id();
+        $table->enum('import_type', ['STUDENTS','ASSIGNMENT','REPORTS']);
+        $table->foreignId('uploaded_by')->constrained('users');
+        $table->string('filename',255);
+        $table->integer('total_rows')->unsigned()->default(0);
+        $table->integer('created_count')->unsigned()->default(0);
+        $table->integer('updated_count')->unsigned()->default(0);
+        $table->integer('skipped_count')->unsigned()->default(0);
+        $table->json('errors')->nullable();
+        $table->enum('status', ['DRY_RUN','COMPLETED','FAILED'])->default('DRY_RUN');
+        $table->timestamps();
+    });
+}
+```
 
-What I did for you
-- I produced a complete SRS tailored to your requirements for a Laravel + MySQL Training & Placement Tracking System. The document includes detailed functional requirements for each role (Admin, T&P, Head, Guide, Student), data model and MySQL table designs (with nullability/NA handling), API endpoints, UI screens and workflows, security/backup/deployment recommendations, reporting, and acceptance criteria.
+12.6 Example Controller Endpoint (Excel import) — high-level description
+Controller: Admin\StudentImportController@import
+- Route: POST /api/admin/import/students
+- Auth: auth + permission 'import students'
+- Request:
+  - file: multipart/form-data (Excel)
+  - dry_run: boolean (optional)
+  - merge_strategy: 'overwrite'|'merge'|'skip' (default 'merge')
+- Flow:
+  1. Validate request and file mime type.
+  2. Parse file (use maatwebsite/excel or PhpSpreadsheet)
+  3. For each row validate required fields (student_id). Build validation result array.
+  4. If dry_run == true: return import summary with row-level errors and preview of created/updated changes (no DB writes).
+  5. If dry_run == false: Begin DB transaction; iterate rows and create/update Students + Users as per pseudocode (auto-account generation). On per-row error, log error and continue (no abort unless critical).
+  6. Save bulk_import_log record and return response with import_id and link to detailed import report.
+- Response: 200 OK with JSON import summary and link to import report (.xlsx) for download.
 
-What's next (suggested immediate actions)
-- I can generate Laravel migration files and sample seeders for the tables above.
-- I can scaffold Laravel models, controllers, policies, and migration files (one-to-one with the database schema here).
-- I can produce sample UI wireframes or a Postman collection for the API endpoints.
-- Tell me which of the next steps you want me to do first (e.g., create migrations + seeders, scaffold controllers & policies, or produce API documentation / Postman tests), and indicate the GitHub repository (owner/repo) where you want code pushed. If you want migrations created in a repo, please provide the repo in owner/name format and confirm you want me to create a pull request or files.
+12.7 Example API request / response (project id suggestion)
+Request:
+- GET /api/tp/projects/next-project-id?dept=CSE&year=2025
+Response:
+{
+  "suggested_project_id": "TP-2025-CSE-0043"
+}
+
+12.8 Example mapping & grade computation sample (worked example)
+- Periodic reports: [12, 13.5, 14, 15, 11] => periodic_sum = 65.5
+- Final project: 22
+- internal_total = 65.5 + 22 = 87.5 => Grade 'A'
+
+--------------------------------------------------------------
+13. Backward compatibility notes & breaking changes
+- Adding students.student_id is additive. However, imports that require student_id may be blocked until student_id populated. Migration plan must backfill student_id for existing records.
+- New reporting tables are additive; existing evaluations table may be deprecated or migrated.
+- Ensure API versioning if existing public APIs change.
+
+--------------------------------------------------------------
+14. Next steps & Recommendations
+- Implement migrations and backfill on a staging environment first.
+- Build automated tests for import logic, project id generation and grade computation.
+- Provide detailed UI wireframes for bulk-upload preview/confirmation pages.
+- Ensure file upload scanning & rate-limiting for import endpoints.
+
+--------------------------------------------------------------
+End of updated SRS (v1.1)
+
+If you want, I can:
+- Generate the actual Laravel migration files + seeders for the tables above.
+- Scaffold the StudentImportController and services (parsing, validation, user creation).
+- Produce sample Excel files (.xlsx) to download (I can provide CSV/TSV content here).
+Which should I do next?

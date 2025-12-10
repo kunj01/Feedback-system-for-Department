@@ -17,8 +17,13 @@ class PreventBackHistory
     {
         $response = $next($request);
 
-        return $response->header('Cache-Control', 'no-cache, no-store, must-revalidate, private')
-                        ->header('Pragma', 'no-cache')
-                        ->header('Expires', '0');
+        // Only apply headers to regular responses, not file downloads
+        if (!$response instanceof \Symfony\Component\HttpFoundation\BinaryFileResponse) {
+            $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, private');
+            $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('Expires', '0');
+        }
+
+        return $response;
     }
 }

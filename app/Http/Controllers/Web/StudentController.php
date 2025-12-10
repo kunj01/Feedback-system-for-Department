@@ -18,14 +18,18 @@ class StudentController extends Controller
     {
         $this->authorize('viewAny', Student::class);
 
-        $query = Student::with(['user', 'department']);
+        $query = Student::with(['user', 'department', 'placements.company']);
 
         // Search filter
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('enrollment_number', 'like', "%{$search}%")
-                  ->orWhere('contact_number', 'like', "%{$search}%")
+                $q->where('student_id', 'like', "%{$search}%")
+                  ->orWhere('roll_no', 'like', "%{$search}%")
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('contact', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($userQuery) use ($search) {
                       $userQuery->where('name', 'like', "%{$search}%")
                                ->orWhere('email', 'like', "%{$search}%");
@@ -129,18 +133,46 @@ class StudentController extends Controller
         $this->authorize('update', $student);
 
         $validated = $request->validate([
-            'department_id' => ['required', 'exists:departments,id'],
-            'enrollment_number' => ['required', 'string', Rule::unique('students')->ignore($student->id)],
-            'contact_number' => ['required', 'string', 'max:15'],
-            'academic_year' => ['required', 'string', 'max:20'],
-            'semester' => ['required', 'integer', 'min:1', 'max:8'],
+            // Basic Information
+            'student_id' => ['nullable', 'string', 'max:50', Rule::unique('students')->ignore($student->id)],
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'middle_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'roll_no' => ['nullable', 'string', 'max:50'],
+            'registration_no' => ['nullable', 'string', 'max:50'],
+            'gender' => ['nullable', 'in:M,F,O'],
+            'dob' => ['nullable', 'date'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'course' => ['nullable', 'string', 'max:100'],
+            'batch' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+            'academic_year' => ['nullable', 'string', 'max:20'],
+            'training_status' => ['nullable', 'in:NOT_ASSIGNED,IN_TRAINING,COMPLETED'],
+            'counsellor_name' => ['nullable', 'string', 'max:255'],
+            'is_eligible' => ['nullable', 'boolean'],
+            'admission_type' => ['nullable', 'string', 'max:100'],
+
+            // Contact Information
+            'contact' => ['nullable', 'string', 'max:50'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'personal_email' => ['nullable', 'email', 'max:255'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'address' => ['nullable', 'string'],
+
+            // Family Information
+            'father_name' => ['nullable', 'string', 'max:255'],
+            'mother_name' => ['nullable', 'string', 'max:255'],
+
+            // Academic Performance
+            'ssc_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'hsc_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'diploma_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'btech_cgpa_upto_5th' => ['nullable', 'numeric', 'min:0', 'max:10'],
             'cgpa' => ['nullable', 'numeric', 'min:0', 'max:10'],
-            'placement_status' => ['required', 'in:Not Placed,Placed,Pursuing Higher Studies'],
         ]);
 
         $student->update($validated);
 
-        return redirect()->route('students.index')
+        return redirect()->route('students.show', $student)
             ->with('success', 'Student updated successfully.');
     }
 
