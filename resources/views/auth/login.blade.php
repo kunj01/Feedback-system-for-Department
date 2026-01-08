@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'Login - Training & Placement System')
+@section('title', 'Login - Course Feedback Management System')
 
 @section('content')
 <div class="w-full max-w-6xl">
@@ -17,8 +17,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h1 class="text-2xl font-bold">Training & Placement</h1>
-                            <p class="text-blue-200 text-sm">Tracking System</p>
+                            <h1 class="text-2xl font-bold">Course Feedback</h1>
+                            <p class="text-blue-200 text-sm">Management System</p>
                         </div>
                     </div>
                 </div>
@@ -33,8 +33,8 @@
                             </div>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-lg font-semibold">Manage Projects</h3>
-                            <p class="text-blue-200 text-sm">Track student training projects and evaluations</p>
+                            <h3 class="text-lg font-semibold">Collect Feedback</h3>
+                            <p class="text-blue-200 text-sm">Anonymous course-wise feedback from students</p>
                         </div>
                     </div>
 
@@ -47,8 +47,8 @@
                             </div>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-lg font-semibold">Track Placements</h3>
-                            <p class="text-blue-200 text-sm">Monitor student placement offers and confirmations</p>
+                            <h3 class="text-lg font-semibold">Analytics & Reports</h3>
+                            <p class="text-blue-200 text-sm">Comprehensive feedback analysis and insights</p>
                         </div>
                     </div>
 
@@ -61,8 +61,8 @@
                             </div>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-lg font-semibold">Generate Reports</h3>
-                            <p class="text-blue-200 text-sm">View analytics and export comprehensive reports</p>
+                            <h3 class="text-lg font-semibold">Track Quality</h3>
+                            <p class="text-blue-200 text-sm">Monitor teaching effectiveness and course quality</p>
                         </div>
                     </div>
                 </div>
@@ -196,7 +196,7 @@
                     <!-- Footer Links -->
                     <div class="mt-8 text-center">
                         <p class="text-sm text-gray-600">
-                            &copy; {{ date('Y') }} Training & Placement System. All rights reserved.
+                            &copy; {{ date('Y') }} Course Feedback Management System. All rights reserved.
                         </p>
                     </div>
                 </div>

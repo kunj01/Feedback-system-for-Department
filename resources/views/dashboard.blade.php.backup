@@ -1,0 +1,451 @@
+@extends('layouts.app')
+
+@section('title', 'Student Feedback Dashboard')
+@section('page-title', 'My Feedback Dashboard')
+
+@section('content')
+@php
+    // Define all subjects and their faculties
+    $subjectsData = [
+        1 => ['name' => 'Data Structures', 'code' => 'CSE-301', 'faculty_count' => 3],
+        2 => ['name' => 'Operating Systems', 'code' => 'CSE-302', 'faculty_count' => 2],
+        3 => ['name' => 'Database Management', 'code' => 'CSE-303', 'faculty_count' => 3],
+        4 => ['name' => 'Computer Networks', 'code' => 'CSE-304', 'faculty_count' => 2],
+        5 => ['name' => 'Software Engineering', 'code' => 'CSE-305', 'faculty_count' => 2],
+    ];
+    
+    $facultyMapping = [
+        1 => [1, 2, 3],
+        2 => [4, 5],
+        3 => [6, 7, 8],
+        4 => [9, 10],
+        5 => [11, 12],
+    ];
+    
+    // Get completed feedbacks from session
+    $completedFeedbacks = session()->get('completed_feedbacks', []);
+    
+    // Calculate completion for each subject
+    $completedSubjects = 0;
+    foreach ($subjectsData as $subjectId => &$subject) {
+        $completedCount = 0;
+        foreach ($facultyMapping[$subjectId] as $facultyId) {
+            $key = $subjectId . '_' . $facultyId;
+            if (isset($completedFeedbacks[$key])) {
+                $completedCount++;
+            }
+        }
+        $subject['completed_count'] = $completedCount;
+        $subject['is_complete'] = ($completedCount == $subject['faculty_count']);
+        if ($subject['is_complete']) {
+            $completedSubjects++;
+        }
+    }
+    
+    $totalSubjects = count($subjectsData);
+    $pendingSubjects = $totalSubjects - $completedSubjects;
+@endphp
+
+<!-- Welcome Section -->
+<div class="mb-6">
+    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-6 text-white">
+        <h2 class="text-2xl font-bold mb-2">Welcome, {{ auth()->user()->name }}!</h2>
+        <p class="text-blue-100">Complete your feedback for all assigned subjects and faculty members.</p>
+    </div>
+</div>
+
+<!-- Progress Overview -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="card bg-white">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747S17.5 6.253 12 6.253z"></path>
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Subjects</p>
+                <p class="text-2xl font-bold text-gray-800">{{ $totalSubjects }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-white">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Completed</p>
+                <p class="text-2xl font-bold text-gray-800">{{ $completedSubjects }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-white">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Pending</p>
+                <p class="text-2xl font-bold text-gray-800">{{ $pendingSubjects }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subject Feedback Cards -->
+<div class="mb-6">
+    <h3 class="text-xl font-bold text-gray-800 mb-4">Your Assigned Subjects</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        @foreach($subjectsData as $subjectId => $subject)
+        @php
+            $completionPercentage = ($subject['completed_count'] / $subject['faculty_count']) * 100;
+            
+            if ($subject['is_complete']) {
+                $borderColor = 'border-green-500';
+                $bgColor = 'bg-green-50';
+                $iconBgColor = 'bg-green-500';
+                $textColor = 'text-green-700';
+                $progressColor = 'bg-green-500';
+            } elseif ($subject['completed_count'] > 0) {
+                $borderColor = 'border-yellow-400';
+                $bgColor = 'bg-yellow-50';
+                $iconBgColor = 'bg-yellow-500';
+                $textColor = 'text-yellow-700';
+                $progressColor = 'bg-yellow-500';
+            } else {
+                $borderColor = 'border-gray-300';
+                $bgColor = 'bg-white';
+                $iconBgColor = 'bg-gray-400';
+                $textColor = 'text-gray-600';
+                $progressColor = 'bg-gray-400';
+            }
+        @endphp
+        
+        <a href="{{ route('feedback.subject', $subjectId) }}" class="card border-2 {{ $borderColor }} {{ $bgColor }} hover:shadow-lg transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h4 class="text-lg font-bold text-gray-800 mb-1">{{ $subject['name'] }}</h4>
+                    <p class="text-sm text-gray-600">{{ $subject['code'] }}</p>
+                </div>
+                <div class="{{ $iconBgColor }} text-white p-2 rounded-full">
+                    @if($subject['is_complete'])
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    @else
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @endif
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">Faculty Feedback</span>
+                    <span class="font-semibold {{ $textColor }}">{{ $subject['completed_count'] }}/{{ $subject['faculty_count'] }} Completed</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="{{ $progressColor }} h-2 rounded-full" style="width: {{ $completionPercentage }}%"></div>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t {{ $borderColor }}">
+                @if($subject['is_complete'])
+                <span class="inline-flex items-center text-sm font-semibold {{ $textColor }}">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    All Feedback Completed
+                </span>
+                @elseif($subject['completed_count'] > 0)
+                <span class="inline-flex items-center text-sm font-semibold {{ $textColor }}">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path>
+                    </svg>
+                    Click to continue
+                </span>
+                @else
+                <span class="inline-flex items-center text-sm font-semibold {{ $textColor }}">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                    </svg>
+                    Click to start
+                </span>
+                @endif
+            </div>
+        </a>
+        @endforeach
+        
+    </div>
+</div>
+
+<!-- Instructions Section -->
+<div class="card bg-blue-50 border border-blue-200">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">How to complete feedback:</h3>
+            <div class="mt-2 text-sm text-blue-700">
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Click on any subject card to view faculty members</li>
+                    <li>Select a faculty member to open their feedback form</li>
+                    <li>Complete and submit the feedback form</li>
+                    <li>Once all faculty feedback for a subject is complete, the subject card will turn green</li>
+                    <li>You must complete feedback for all assigned subjects</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+                <div class="flex items-center text-sm">
+                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-gray-700">Dr. Suresh Patel</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-green-200">
+                <span class="inline-flex items-center text-sm font-semibold text-green-700">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    All Feedback Completed
+                </span>
+            </div>
+        </div>
+
+        <!-- Subject Card 2 - Partially Completed -->
+        <a href="{{ route('feedback.subject', 2) }}" class="card border-2 border-yellow-400 bg-yellow-50 hover:shadow-lg transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h4 class="text-lg font-bold text-gray-800 mb-1">Operating Systems</h4>
+                    <p class="text-sm text-gray-600">CSE-302</p>
+                </div>
+                <div class="bg-yellow-500 text-white p-2 rounded-full">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">Faculty Feedback</span>
+                    <span class="font-semibold text-yellow-700">1/2 Completed</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 50%"></div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex items-center text-sm">
+                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-gray-700">Dr. Vijay Singh</span>
+                </div>
+                <div class="flex items-center text-sm">
+                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-gray-500">Prof. Meena Reddy</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-yellow-200">
+                <button class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    Continue Feedback →
+                </button>
+            </div>
+        </a>
+
+        <!-- Subject Card 3 - Not Started -->
+        <a href="{{ route('feedback.subject', 3) }}" class="card border-2 border-gray-300 bg-white hover:shadow-lg transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h4 class="text-lg font-bold text-gray-800 mb-1">Database Management</h4>
+                    <p class="text-sm text-gray-600">CSE-303</p>
+                </div>
+                <div class="bg-gray-400 text-white p-2 rounded-full">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">Faculty Feedback</span>
+                    <span class="font-semibold text-gray-500">0/3 Completed</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-gray-400 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex items-center text-sm text-gray-500">
+                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Dr. Priya Joshi</span>
+                </div>
+                <div class="flex items-center text-sm text-gray-500">
+                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Prof. Amit Gupta</span>
+                </div>
+                <div class="flex items-center text-sm text-gray-500">
+                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Dr. Neha Kapoor</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    Start Feedback →
+                </button>
+            </div>
+        </a>
+
+        <!-- Subject Card 4 - Not Started -->
+        <a href="{{ route('feedback.subject', 4) }}" class="card border-2 border-gray-300 bg-white hover:shadow-lg transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h4 class="text-lg font-bold text-gray-800 mb-1">Computer Networks</h4>
+                    <p class="text-sm text-gray-600">CSE-304</p>
+                </div>
+                <div class="bg-gray-400 text-white p-2 rounded-full">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">Faculty Feedback</span>
+                    <span class="font-semibold text-gray-500">0/2 Completed</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-gray-400 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex items-center text-sm text-gray-500">
+                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Dr. Arun Verma</span>
+                </div>
+                <div class="flex items-center text-sm text-gray-500">
+                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Prof. Kavita Mehta</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    Start Feedback →
+                </button>
+            </div>
+        </a>
+
+        <!-- Subject Card 5 - Completed -->
+        <div class="card border-2 border-green-500 bg-green-50 hover:shadow-lg transition-shadow cursor-pointer">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h4 class="text-lg font-bold text-gray-800 mb-1">Software Engineering</h4>
+                    <p class="text-sm text-gray-600">CSE-305</p>
+                </div>
+                <div class="bg-green-500 text-white p-2 rounded-full">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">Faculty Feedback</span>
+                    <span class="font-semibold text-green-600">2/2 Completed</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex items-center text-sm">
+                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-gray-700">Dr. Sanjay Desai</span>
+                </div>
+                <div class="flex items-center text-sm">
+                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-gray-700">Prof. Rekha Nair</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-green-200">
+                <span class="inline-flex items-center text-sm font-semibold text-green-700">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    All Feedback Completed
+                </span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Instructions Section -->
+<div class="card bg-blue-50 border border-blue-200">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800">How to complete feedback:</h3>
+            <div class="mt-2 text-sm text-blue-700">
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Click on any subject card to view faculty members</li>
+                    <li>Select a faculty member to open their feedback form</li>
+                    <li>Complete and submit the feedback form</li>
+                    <li>Once all faculty feedback for a subject is complete, the subject card will turn green</li>
+                    <li>You must complete feedback for all assigned subjects</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

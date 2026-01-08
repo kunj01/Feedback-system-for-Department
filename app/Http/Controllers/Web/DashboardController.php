@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\Department;
 use App\Models\User;
+use App\Models\FormAssignment;
+use App\Models\Speaker;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class DashboardController extends Controller
 {
@@ -15,102 +18,105 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Student::with(['user', 'department', 'placements.company']);
-
-        // Search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('student_id', 'like', "%{$search}%")
-                  ->orWhere('roll_no', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('contact', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%");
-                  });
-            });
+        $user = auth()->user();
+        
+        // Check if user is admin
+        if ($user->hasRole('Admin')) {
+            return $this->adminDashboard($request);
         }
-
-        // Department filter
-        if ($request->filled('department')) {
-            $query->where('department_id', $request->department);
+        
+        // Check if user is faculty
+        if ($user->hasRole('Faculty')) {
+            return $this->facultyDashboard();
         }
-
-        // Academic year filter
-        if ($request->filled('academic_year')) {
-            $query->where('academic_year', $request->academic_year);
+        
+        // Check if user is student
+        if ($user->hasRole('Student')) {
+            return $this->studentDashboard();
         }
-
-        // Batch filter
-        if ($request->filled('batch')) {
-            $query->where('batch', $request->batch);
+        
+        // Default fallback
+        return view('dashboard');
+    }
+    
+    /**
+     * Admin Dashboard
+     */
+    private function adminDashboard(Request $request)
+    {
+        // Get all forms from documents folder
+        $formsPath = public_path('documents');
+        $totalForms = 0;
+        
+        if (File::exists($formsPath)) {
+            $files = File::files($formsPath);
+            $totalForms = count($files);
         }
-
-        // Placed filter
-        if ($request->filled('placed')) {
-            if ($request->placed === 'yes') {
-                $query->whereHas('placements', function ($q) {
-                    $q->where('status', 'OFFERED');
-                });
-            } elseif ($request->placed === 'no') {
-                $query->whereDoesntHave('placements', function ($q) {
-                    $q->where('status', 'OFFERED');
-                });
-            }
-        }
-
-        // Eligible filter
-        if ($request->filled('eligible')) {
-            $query->where('is_eligible', $request->eligible);
-        }
-
-        // Training status filter
-        if ($request->filled('training_status')) {
-            $query->where('training_status', $request->training_status);
-        }
-
-        // CGPA filter
-        if ($request->filled('min_cgpa')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('cgpa', '>=', $request->min_cgpa)
-                  ->orWhere('btech_cgpa_upto_5th', '>=', $request->min_cgpa);
-            });
-        }
-
-        // Guide filter (for projects)
-        if ($request->filled('guide')) {
-            $query->whereHas('projects', function ($q) use ($request) {
-                $q->where('guide_id', $request->guide);
-            });
-        }
-
-        $students = $query->latest()->paginate(15)->withQueryString();
-
-        // Get filter options
-        $departments = Department::all();
-        $academicYears = Student::select('academic_year')
-            ->distinct()
-            ->whereNotNull('academic_year')
-            ->orderBy('academic_year', 'desc')
-            ->pluck('academic_year');
-
-        $batches = Student::select('batch')
-            ->distinct()
-            ->whereNotNull('batch')
-            ->orderBy('batch', 'desc')
-            ->pluck('batch');
-
-        $guides = User::role('guide')->orderBy('name')->get();
-
+        
+        // Get assignment statistics
+        $totalAssignments = FormAssignment::count();
+        $pendingAssignments = FormAssignment::where('status', 'pending')->count();
+        $completedAssignments = FormAssignment::where('status', 'completed')->count();
+        
+        // Get total students
+        $totalStudents = Student::count();
+        
+        // Get recent assignments
+        $recentAssignments = FormAssignment::with(['student.user', 'teacher', 'subject'])
+            ->latest()
+            ->take(10)
+            ->get();
+        
+        // Pass isAdmin flag
+        $isAdmin = true;
+        
         return view('dashboard', compact(
-            'students',
-            'departments',
-            'academicYears',
-            'batches',
-            'guides'
+            'totalForms',
+            'totalAssignments',
+            'pendingAssignments',
+            'completedAssignments',
+            'totalStudents',
+            'recentAssignments',
+            'isAdmin'
         ));
+    }
+    
+    /**
+     * Student Dashboard
+     */
+    private function studentDashboard()
+    {
+        $student = auth()->user()->student;
+        
+        if (!$student) {
+            $assignedForms = collect([]);
+            return view('dashboard', compact('assignedForms'));
+        }
+        
+        // Get assigned forms grouped by form_name
+        $assignedForms = FormAssignment::with(['teacher', 'subject'])
+            ->where('student_id', $student->id)
+            ->get();
+        
+        // Pass isAdmin flag
+        $isAdmin = false;
+        
+        return view('dashboard', compact('assignedForms', 'isAdmin'));
+    }
+    
+    /**
+     * Faculty Dashboard
+     */
+    private function facultyDashboard()
+    {
+        $totalSpeakers = Speaker::where('created_by', auth()->id())->count();
+        $recentSpeakers = Speaker::where('created_by', auth()->id())
+            ->orderBy('date', 'desc')
+            ->take(5)
+            ->get();
+        
+        $isFaculty = true;
+        
+        return view('dashboard', compact('totalSpeakers', 'recentSpeakers', 'isFaculty'));
     }
 }

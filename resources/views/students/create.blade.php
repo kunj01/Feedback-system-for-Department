@@ -64,44 +64,42 @@
                         @enderror
                     </div>
 
-                    <!-- Enrollment Number -->
+                    <!-- Roll Number -->
                     <div>
-                        <label for="enrollment_number" class="label required">Enrollment Number</label>
+                        <label for="roll_no" class="label">Roll Number</label>
                         <input
                             type="text"
-                            id="enrollment_number"
-                            name="enrollment_number"
-                            value="{{ old('enrollment_number') }}"
+                            id="roll_no"
+                            name="roll_no"
+                            value="{{ old('roll_no') }}"
                             placeholder="e.g., 21CE001"
-                            class="input-field @error('enrollment_number') border-red-500 @enderror"
-                            required
+                            class="input-field @error('roll_no') border-red-500 @enderror"
                         >
-                        @error('enrollment_number')
+                        @error('roll_no')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <!-- Contact Number -->
                     <div>
-                        <label for="contact_number" class="label required">Contact Number</label>
+                        <label for="contact" class="label">Contact Number</label>
                         <input
                             type="tel"
-                            id="contact_number"
-                            name="contact_number"
-                            value="{{ old('contact_number') }}"
+                            id="contact"
+                            name="contact"
+                            value="{{ old('contact') }}"
                             placeholder="e.g., +91 9876543210"
-                            class="input-field @error('contact_number') border-red-500 @enderror"
-                            required
+                            class="input-field @error('contact') border-red-500 @enderror"
                         >
-                        @error('contact_number')
+                        @error('contact')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <!-- Academic Year & Semester -->
+                    <!-- Academic Year & Batch -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="academic_year" class="label required">Academic Year</label>
+                            <label for="academic_year" class="label">Academic Year</label>
                             <input
                                 type="text"
                                 id="academic_year"
@@ -109,7 +107,6 @@
                                 value="{{ old('academic_year') }}"
                                 placeholder="e.g., 2023-24"
                                 class="input-field @error('academic_year') border-red-500 @enderror"
-                                required
                             >
                             @error('academic_year')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -117,19 +114,18 @@
                         </div>
 
                         <div>
-                            <label for="semester" class="label required">Current Semester</label>
-                            <select
-                                id="semester"
-                                name="semester"
-                                class="input-field @error('semester') border-red-500 @enderror"
-                                required
+                            <label for="batch" class="label">Batch Year</label>
+                            <input
+                                type="number"
+                                id="batch"
+                                name="batch"
+                                value="{{ old('batch', date('Y')) }}"
+                                placeholder="e.g., {{ date('Y') }}"
+                                class="input-field @error('batch') border-red-500 @enderror"
+                                min="2000"
+                                max="{{ date('Y') + 5 }}"
                             >
-                                <option value="">Select Semester</option>
-                                @for($i = 1; $i <= 8; $i++)
-                                <option value="{{ $i }}" {{ old('semester') == $i ? 'selected' : '' }}>Semester {{ $i }}</option>
-                                @endfor
-                            </select>
-                            @error('semester')
+                            @error('batch')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                             @enderror
                         </div>
@@ -155,21 +151,34 @@
                         <p class="text-gray-500 text-sm mt-1">Out of 10 (optional)</p>
                     </div>
 
-                    <!-- Placement Status -->
+                    <!-- Course -->
                     <div>
-                        <label for="placement_status" class="label required">Placement Status</label>
-                        <select
-                            id="placement_status"
-                            name="placement_status"
-                            class="input-field @error('placement_status') border-red-500 @enderror"
-                            required
+                        <label for="course" class="label">Course</label>
+                        <input
+                            type="text"
+                            id="course"
+                            name="course"
+                            value="{{ old('course') }}"
+                            placeholder="e.g., B.Tech"
+                            class="input-field @error('course') border-red-500 @enderror"
                         >
-                            <option value="">Select Status</option>
-                            <option value="Not Placed" {{ old('placement_status') == 'Not Placed' ? 'selected' : '' }}>Not Placed</option>
-                            <option value="Placed" {{ old('placement_status') == 'Placed' ? 'selected' : '' }}>Placed</option>
-                            <option value="Pursuing Higher Studies" {{ old('placement_status') == 'Pursuing Higher Studies' ? 'selected' : '' }}>Pursuing Higher Studies</option>
-                        </select>
-                        @error('placement_status')
+                        @error('course')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="label">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value="{{ old('email') }}"
+                            placeholder="student@example.com"
+                            class="input-field @error('email') border-red-500 @enderror"
+                        >
+                        @error('email')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>

@@ -60,6 +60,18 @@ class DefaultAdminSeeder extends Seeder
 
         $guide->assignRole('Guide');
 
+        // Create Faculty
+        $faculty = User::create([
+            'name' => 'Faculty Member',
+            'email' => 'faculty@system.com',
+            'password' => Hash::make('faculty123'),
+            'phone' => '1234567895',
+            'department_id' => 1, // CSE department
+            'is_active' => true,
+        ]);
+
+        $faculty->assignRole('Faculty');
+
         // Create Student
         $student = User::create([
             'name' => 'Demo Student',
@@ -71,6 +83,36 @@ class DefaultAdminSeeder extends Seeder
         ]);
 
         $student->assignRole('Student');
+
+        // Create Student Profile
+        \App\Models\Student::create([
+            'user_id' => $student->id,
+            'student_id' => 'STU2024001',
+            'first_name' => 'Demo',
+            'middle_name' => null,
+            'last_name' => 'Student',
+            'roll_no' => '001',
+            'registration_no' => 'REG2024001',
+            'dob' => '2003-01-15',
+            'gender' => 'Male',
+            'father_name' => 'Father Name',
+            'mother_name' => 'Mother Name',
+            'address' => '123 Street Name',
+            'city' => 'Mumbai',
+            'contact' => '1234567894',
+            'email' => 'student@system.com',
+            'personal_email' => 'demo.student@gmail.com',
+            'department_id' => 1,
+            'course' => 'B.Tech CSE',
+            'batch' => 2024,
+            'academic_year' => '2024-2025',
+            'cgpa' => 8.5,
+            'ssc_percentage' => 85.0,
+            'hsc_percentage' => 82.0,
+            'admission_type' => 'Regular',
+            'is_eligible' => 'YES',
+            'training_status' => 'Active',
+        ]);
     }
 }
 

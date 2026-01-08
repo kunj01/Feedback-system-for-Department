@@ -72,7 +72,14 @@ class StudentController extends Controller
         $this->authorize('create', Student::class);
 
         $departments = Department::all();
-        $users = User::role('student')->whereDoesntHave('student')->get();
+        
+        // Check if Student role exists, if not get all users without students
+        try {
+            $users = User::role('Student')->whereDoesntHave('student')->get();
+        } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+            // If Student role doesn't exist, get all users without students
+            $users = User::whereDoesntHave('student')->get();
+        }
 
         return view('students.create', compact('departments', 'users'));
     }
@@ -87,15 +94,42 @@ class StudentController extends Controller
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id', 'unique:students,user_id'],
             'department_id' => ['required', 'exists:departments,id'],
-            'enrollment_number' => ['required', 'string', 'unique:students,enrollment_number'],
-            'contact_number' => ['required', 'string', 'max:15'],
-            'academic_year' => ['required', 'string', 'max:20'],
-            'semester' => ['required', 'integer', 'min:1', 'max:8'],
+            'roll_no' => ['nullable', 'string', 'max:50'],
+            'registration_no' => ['nullable', 'string', 'max:50'],
+            'contact' => ['nullable', 'string', 'max:50'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'academic_year' => ['nullable', 'string', 'max:20'],
+            'batch' => ['nullable', 'integer'],
             'cgpa' => ['nullable', 'numeric', 'min:0', 'max:10'],
-            'placement_status' => ['required', 'in:Not Placed,Placed,Pursuing Higher Studies'],
+            'course' => ['nullable', 'string', 'max:100'],
         ]);
 
-        Student::create($validated);
+        // Generate student_id
+        $department = Department::find($validated['department_id']);
+        $deptCode = $department ? strtoupper(substr($department->code ?? $department->name, 0, 3)) : 'STD';
+        $batch = $validated['batch'] ?? date('Y');
+        
+        // Get the next ID by counting existing students + 1
+        $nextId = Student::count() + 1;
+        $paddedId = str_pad($nextId, 4, '0', STR_PAD_LEFT);
+        
+        $validated['student_id'] = $deptCode . $batch . $paddedId;
+
+        $student = Student::create($validated);
+        
+        // Assign Student role to the user if role exists
+        $user = User::find($validated['user_id']);
+        if ($user) {
+            try {
+                if (!\Spatie\Permission\Models\Role::where('name', 'Student')->where('guard_name', 'web')->exists()) {
+                    \Spatie\Permission\Models\Role::create(['name' => 'Student', 'guard_name' => 'web']);
+                }
+                $user->assignRole('Student');
+            } catch (\Exception $e) {
+                // Log but don't fail if role assignment fails
+                \Log::warning('Could not assign Student role: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route('students.index')
             ->with('success', 'Student created successfully.');

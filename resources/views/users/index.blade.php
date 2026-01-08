@@ -10,12 +10,23 @@
             <p class="text-gray-600 mt-1">Manage system users and their roles</p>
         </div>
         @can('create', App\Models\User::class)
-        <a href="{{ route('users.create') }}" class="btn-primary">
-            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Add New User
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('users.create') }}" class="btn-primary">
+                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add New User
+            </a>
+            @if(auth()->check() && auth()->user()->getRoleNames()->contains('Admin'))
+            <a href="{{ route('students.import.index') }}" class="btn-secondary">
+                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-4H6a2 2 0 00-2 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h8M8 16h8M8 8h4"></path>
+                </svg>
+                Import Students
+            </a>
+            @endif
+        </div>
         @endcan
     </div>
 </div>

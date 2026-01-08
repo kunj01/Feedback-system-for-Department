@@ -17,23 +17,23 @@ return new class extends Migration
             $table->string('student_id', 50)->nullable()->after('id');
         });
 
-        // Step 2: Backfill student_id for existing records
-        // Generate student_id from department code + batch + padded id
-        DB::statement("
-            UPDATE students s
-            LEFT JOIN departments d ON s.department_id = d.id
-            SET s.student_id = CONCAT(
-                COALESCE(UPPER(SUBSTRING(d.code, 1, 3)), 'STD'),
-                COALESCE(s.batch, '2025'),
-                LPAD(s.id, 4, '0')
-            )
-            WHERE s.student_id IS NULL
-        ");
+        // Step 2: Backfill student_id for existing records (SQLite compatible)
+        $students = DB::table('students')->whereNull('student_id')->get();
+        
+        foreach ($students as $student) {
+            $department = DB::table('departments')->where('id', $student->department_id)->first();
+            $deptCode = $department ? strtoupper(substr($department->code, 0, 3)) : 'STD';
+            $batch = $student->batch ?? '2025';
+            $paddedId = str_pad($student->id, 4, '0', STR_PAD_LEFT);
+            
+            DB::table('students')
+                ->where('id', $student->id)
+                ->update(['student_id' => $deptCode . $batch . $paddedId]);
+        }
 
         // Step 3: Make student_id NOT NULL and add unique constraint
         Schema::table('students', function (Blueprint $table) {
             $table->string('student_id', 50)->nullable(false)->unique()->change();
-            $table->index('student_id');
         });
     }
 
@@ -43,8 +43,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('students', function (Blueprint $table) {
-            $table->dropUnique(['student_id']);
-            $table->dropIndex(['student_id']);
             $table->dropColumn('student_id');
         });
     }
