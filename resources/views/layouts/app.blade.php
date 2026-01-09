@@ -20,13 +20,13 @@
 <body class="bg-gray-100 font-sans antialiased">
     <div class="min-h-screen flex">
         <!-- Sidebar -->
-        <aside class="w-64 bg-white shadow-md fixed h-full">
-            <div class="p-6 border-b">
+        <aside class="w-64 bg-white shadow-lg fixed h-screen overflow-y-auto z-30">
+            <div class="p-6 border-b border-gray-200">
                 <h1 class="text-xl font-bold text-gray-800">SCFMS</h1>
-                <p class="text-sm text-gray-600">Course Feedback System</p>
+                <p class="text-sm text-gray-600 mt-1">Course Feedback System</p>
             </div>
 
-            <nav class="p-4 space-y-2 overflow-y-auto" style="max-height: calc(100vh - 120px);">
+            <nav class="p-4 space-y-1">
                 @auth
                     @php
                         $user = auth()->user();
@@ -43,8 +43,8 @@
 
                     @if($roles->contains('Admin'))
                         <!-- Academic Setup -->
-                        <div class="mt-4 pt-4 border-t">
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2">Academic Setup</p>
+                        <div class="mt-6">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">Academic Setup</p>
                             
                             <!-- Academic Years -->
                             <a href="{{ route('academic-years.index') }}" class="{{ request()->routeIs('academic-years.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
@@ -80,8 +80,8 @@
                         </div>
 
                         <!-- Feedback Management -->
-                        <div class="mt-4 pt-4 border-t">
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2">Feedback System</p>
+                        <div class="mt-6 pt-4 border-t border-gray-200">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">Feedback System</p>
                             
                             <!-- Forms -->
                             <a href="{{ route('forms.index') }}" class="{{ request()->routeIs('forms.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
@@ -100,7 +100,7 @@
                             </a>
 
                             <!-- Reports & Analytics -->
-                            <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                            <a href="{{ route('admin.speakers.analysis.report') }}" class="{{ request()->routeIs('admin.speakers.analysis.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
                                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                 </svg>
@@ -125,8 +125,8 @@
                         </div>
 
                         <!-- User Management -->
-                        <div class="mt-4 pt-4 border-t">
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2">User Management</p>
+                        <div class="mt-6 pt-4 border-t border-gray-200">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">User Management</p>
                             
                             <!-- Users -->
                             <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
@@ -151,12 +151,12 @@
         </aside>
 
         <!-- Main Content -->
-        <div class="flex-1 ml-64 flex flex-col min-h-screen">
+        <div class="flex-1 ml-64 flex flex-col min-h-screen overflow-x-hidden">
             <!-- Top Navigation Bar -->
-            <header class="bg-white shadow-sm sticky top-0 z-10">
-                <div class="flex items-center justify-between px-6 py-4">
+            <header class="bg-white shadow-sm sticky top-0 z-20 border-b border-gray-200">
+                <div class="flex items-center justify-between px-6 py-3">
                     <div class="flex-1">
-                        <h2 class="text-2xl font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h2>
+                        <h2 class="text-xl font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h2>
                     </div>
 
                     <div class="flex items-center space-x-4">
@@ -228,9 +228,9 @@
             </header>
 
             <!-- Page Content -->
-            <main class="p-6 flex-1">
-                <!-- Flash Messages -->
-                @if(session('success'))
+            <main class="p-6 flex-1 bg-gray-50">
+                <!-- Flash Messages (only for non-speaker pages) -->
+                @if(session('success') && !request()->routeIs('admin.speakers.*'))
                     <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
                         {{ session('success') }}
                     </div>
@@ -253,7 +253,8 @@
             </footer>
         </div>
     </div>
-
+    
+    <!-- Page-specific scripts -->
     @stack('scripts')
 </body>
 </html>

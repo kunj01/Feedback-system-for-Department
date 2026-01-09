@@ -185,9 +185,19 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{speaker}/reject', [AdminSpeakerController::class, 'reject'])->name('reject');
         Route::delete('/{speaker}', [AdminSpeakerController::class, 'destroy'])->name('destroy');
         
+        // Auto-approve all faculty-approved speakers
+        Route::post('/auto-approve', [AdminSpeakerController::class, 'autoApproveAll'])->name('auto-approve');
+        
+        // Toggle auto-approve setting
+        Route::post('/toggle-auto-approve', [AdminSpeakerController::class, 'toggleAutoApprove'])->name('toggle-auto-approve');
+        
         // View feedback responses
         Route::get('/feedback/responses', [AdminSpeakerController::class, 'feedbackResponses'])->name('feedback.responses');
         Route::get('/{speaker}/feedback', [AdminSpeakerController::class, 'viewFeedback'])->name('feedback.view');
+        
+        // NAAC Analysis Report
+        Route::get('/analysis/report', [AdminSpeakerController::class, 'generateAnalysisReport'])->name('analysis.report');
+        Route::get('/analysis/export-pdf', [AdminSpeakerController::class, 'exportAnalysisReportPdf'])->name('analysis.export-pdf');
     });
 });
 

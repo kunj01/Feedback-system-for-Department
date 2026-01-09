@@ -18,6 +18,9 @@ class Speaker extends Model
         'approval_status',
         'approved_by',
         'approved_at',
+        'faculty_approval_status',
+        'faculty_approved_by',
+        'faculty_approved_at',
         'feedback_token',
         'feedback_submitted'
     ];
@@ -26,6 +29,7 @@ class Speaker extends Model
         'date' => 'date',
         'time' => 'datetime',
         'approved_at' => 'datetime',
+        'faculty_approved_at' => 'datetime',
     ];
 
     public function creator(): BelongsTo
@@ -36,6 +40,11 @@ class Speaker extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function facultyApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'faculty_approved_by');
     }
 
     public function feedback()

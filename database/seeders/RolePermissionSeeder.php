@@ -57,13 +57,15 @@ class RolePermissionSeeder extends Seeder
 
             // Audit Logs
             'view audit logs',
+
+            // Speaker Management
+            'view speakers', 'create speakers', 'edit speakers', 'delete speakers',
+            'approve speakers', 'faculty approve speakers', 'admin approve speakers',
         ];
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
-
-        // Create roles and assign permissions
 
         // Admin Role - Full access
         $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
@@ -114,6 +116,7 @@ class RolePermissionSeeder extends Seeder
             'view evaluations', 'create evaluations', 'edit evaluations',
             'view reports', 'review reports',
             'view notifications',
+            'view speakers', 'create speakers', 'faculty approve speakers',
         ]);
     }
 }

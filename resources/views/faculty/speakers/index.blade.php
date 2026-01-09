@@ -4,6 +4,31 @@
 @section('page-title', 'External Speakers')
 
 @section('content')
+
+@if(session('success'))
+    <div id="success-notification" class="fixed top-20 right-6 z-50 bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-slide-in">
+        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>{{ session('success') }}</span>
+        <button onclick="document.getElementById('success-notification').remove()" class="ml-4 text-green-600 hover:text-green-800">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+    <script>
+        setTimeout(() => {
+            const notification = document.getElementById('success-notification');
+            if (notification) {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 3000);
+    </script>
+@endif
+
 <div class="mb-6 flex justify-between items-center">
     <div>
         <h2 class="text-2xl font-bold text-gray-900">External Speaker Management</h2>
@@ -20,11 +45,58 @@
     </a>
 </div>
 
-@if(session('success'))
-    <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
-        {{ session('success') }}
+<!-- Status Filter Tabs and Sort Controls -->
+<form method="GET" action="{{ route('faculty.speakers.index') }}" class="mb-6">
+    <div class="flex justify-between items-center border-b border-gray-200">
+        <!-- Status Tabs -->
+        <div class="flex space-x-4">
+            <button 
+                type="submit" 
+                name="status" 
+                value="all"
+                class="px-4 py-3 text-sm font-medium transition-colors {{ request('status', 'all') === 'all' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-800' }}"
+            >
+                All Speakers
+            </button>
+            <button 
+                type="submit" 
+                name="status" 
+                value="pending"
+                class="px-4 py-3 text-sm font-medium transition-colors {{ request('status') === 'pending' ? 'text-yellow-600 border-b-2 border-yellow-600' : 'text-gray-600 hover:text-gray-800' }}"
+            >
+                Pending Approval
+            </button>
+            <button 
+                type="submit" 
+                name="status" 
+                value="approved"
+                class="px-4 py-3 text-sm font-medium transition-colors {{ request('status') === 'approved' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600 hover:text-gray-800' }}"
+            >
+                Approved
+            </button>
+            <button 
+                type="submit" 
+                name="status" 
+                value="rejected"
+                class="px-4 py-3 text-sm font-medium transition-colors {{ request('status') === 'rejected' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-600 hover:text-gray-800' }}"
+            >
+                Rejected
+            </button>
+        </div>
+
+        <!-- Sort Controls -->
+        <div class="flex items-center gap-4">
+            <select name="sort_by" onchange="this.form.submit()" class="input-field">
+                <option value="date" {{ request('sort_by', 'date') === 'date' ? 'selected' : '' }}>Sort by Date</option>
+                <option value="name" {{ request('sort_by') === 'name' ? 'selected' : '' }}>Sort by Name</option>
+            </select>
+            <select name="sort_order" onchange="this.form.submit()" class="input-field">
+                <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>Newest First</option>
+                <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>Oldest First</option>
+            </select>
+        </div>
     </div>
-@endif
+</form>
 
 @if($speakers->count() > 0)
     <div class="card bg-white">
@@ -45,7 +117,10 @@
                             Date & Time
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Email
+                            Faculty Status
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Admin Status
                         </th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Actions
@@ -57,6 +132,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="font-medium text-gray-900">{{ $speaker->name }}</div>
+                                <div class="text-xs text-gray-500">{{ $speaker->email }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-700">{{ $speaker->department }}</div>
@@ -69,29 +145,37 @@
                                 <div class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($speaker->time)->format('h:i A') }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-700">{{ $speaker->email }}</div>
+                                @if($speaker->faculty_approval_status === 'approved')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Approved
+                                    </span>
+                                @elseif($speaker->faculty_approval_status === 'rejected')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Rejected
+                                    </span>
+                                @else
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        Pending
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($speaker->approval_status === 'approved')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Approved
+                                    </span>
+                                @elseif($speaker->approval_status === 'rejected')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Rejected
+                                    </span>
+                                @else
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        Pending
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end gap-2">
-                                    <a 
-                                        href="{{ route('faculty.speakers.show', $speaker->id) }}" 
-                                        class="text-blue-600 hover:text-blue-900"
-                                        title="View"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </a>
-                                    <a 
-                                        href="{{ route('faculty.speakers.edit', $speaker->id) }}" 
-                                        class="text-indigo-600 hover:text-indigo-900"
-                                        title="Edit"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </a>
                                     <form 
                                         action="{{ route('faculty.speakers.destroy', $speaker->id) }}" 
                                         method="POST" 
