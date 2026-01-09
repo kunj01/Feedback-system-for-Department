@@ -3,198 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speaker Feedback Form</title>
+    <title>Feedback on Curriculum (Academic-Teacher-Industry)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .rating-stars input[type="radio"] {
-            display: none;
-        }
-        .rating-stars label {
-            cursor: pointer;
-            font-size: 2rem;
-            color: #d1d5db;
-            transition: color 0.2s;
-        }
-        .rating-stars input[type="radio"]:checked ~ label,
-        .rating-stars label:hover,
-        .rating-stars label:hover ~ label {
-            color: #fbbf24;
-        }
-        .rating-stars {
-            display: flex;
-            flex-direction: row-reverse;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen py-12 px-4">
-    <div class="max-w-3xl mx-auto">
+<body class="bg-gray-50 min-h-screen py-8 px-4">
+    <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <div class="bg-white rounded-t-2xl shadow-lg p-8 text-center">
-            <div class="text-6xl mb-4">📝</div>
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Event Feedback Form</h1>
-            <p class="text-gray-600">We value your feedback to improve our events</p>
-        </div>
-
-        <!-- Event Details -->
-        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white">
-            <h2 class="text-xl font-semibold mb-4 flex items-center">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                Event Details
-            </h2>
-            <div class="grid md:grid-cols-2 gap-4">
-                <div class="bg-white/10 rounded-lg p-3">
-                    <p class="text-indigo-200 text-sm">Speaker</p>
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">Feedback on Curriculum (Academic-Teacher-Industry)</h1>
+            
+            <!-- Event Details -->
+            <div class="bg-blue-50 rounded-lg p-4 grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-600">Speaker Name:</p>
                     <p class="font-semibold">{{ $speaker->name }}</p>
                 </div>
-                <div class="bg-white/10 rounded-lg p-3">
-                    <p class="text-indigo-200 text-sm">Department</p>
+                <div>
+                    <p class="text-gray-600">Department:</p>
                     <p class="font-semibold">{{ $speaker->department }}</p>
                 </div>
-                <div class="bg-white/10 rounded-lg p-3">
-                    <p class="text-indigo-200 text-sm">Venue</p>
+                <div>
+                    <p class="text-gray-600">Venue:</p>
                     <p class="font-semibold">{{ $speaker->venue }}</p>
                 </div>
-                <div class="bg-white/10 rounded-lg p-3">
-                    <p class="text-indigo-200 text-sm">Date & Time</p>
-                    <p class="font-semibold">{{ $speaker->date->format('M d, Y') }} at {{ \Carbon\Carbon::parse($speaker->time)->format('h:i A') }}</p>
+                <div>
+                    <p class="text-gray-600">Date & Time:</p>
+                    <p class="font-semibold">{{ $speaker->date->format('l, F d, Y') }} at {{ \Carbon\Carbon::parse($speaker->time)->format('h:i A') }}</p>
                 </div>
             </div>
         </div>
 
-        <!-- Feedback Form -->
-        <div class="bg-white rounded-b-2xl shadow-lg p-8">
-            @if ($errors->any())
-                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800">Please correct the following errors:</h3>
-                            <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <form action="{{ route('speaker.feedback.store', $speaker->feedback_token) }}" method="POST" class="space-y-6">
-                @csrf
-
-                <!-- Event Quality -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <span class="text-red-500">*</span> How would you rate the overall quality of the event?
-                    </label>
-                    <textarea name="event_quality" rows="3" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                        placeholder="Please share your thoughts about the event organization, schedule, and coordination...">{{ old('event_quality') }}</textarea>
-                    @error('event_quality')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Venue Facilities -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <span class="text-red-500">*</span> How were the venue facilities (audio/visual equipment, seating, etc.)?
-                    </label>
-                    <textarea name="venue_facilities" rows="3" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                        placeholder="Share your experience with the venue, technical setup, and facilities...">{{ old('venue_facilities') }}</textarea>
-                    @error('venue_facilities')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Hospitality -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <span class="text-red-500">*</span> How was the hospitality provided by the department?
-                    </label>
-                    <textarea name="hospitality" rows="3" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                        placeholder="Tell us about the reception, refreshments, and assistance provided...">{{ old('hospitality') }}</textarea>
-                    @error('hospitality')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Overall Experience -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <span class="text-red-500">*</span> What was your overall experience as a speaker at our institution?
-                    </label>
-                    <textarea name="overall_experience" rows="3" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                        placeholder="Share your overall experience and impression of the event...">{{ old('overall_experience') }}</textarea>
-                    @error('overall_experience')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Suggestions -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Any suggestions for improvement?
-                    </label>
-                    <textarea name="suggestions" rows="3"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                        placeholder="Share any suggestions or recommendations for future events...">{{ old('suggestions') }}</textarea>
-                    @error('suggestions')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Rating -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-3 text-center">
-                        <span class="text-red-500">*</span> Overall Rating (1-5 Stars)
-                    </label>
-                    <div class="rating-stars">
-                        <input type="radio" id="star5" name="rating" value="5" {{ old('rating') == '5' ? 'checked' : '' }} required/>
-                        <label for="star5">★</label>
-                        <input type="radio" id="star4" name="rating" value="4" {{ old('rating') == '4' ? 'checked' : '' }}/>
-                        <label for="star4">★</label>
-                        <input type="radio" id="star3" name="rating" value="3" {{ old('rating') == '3' ? 'checked' : '' }}/>
-                        <label for="star3">★</label>
-                        <input type="radio" id="star2" name="rating" value="2" {{ old('rating') == '2' ? 'checked' : '' }}/>
-                        <label for="star2">★</label>
-                        <input type="radio" id="star1" name="rating" value="1" {{ old('rating') == '1' ? 'checked' : '' }}/>
-                        <label for="star1">★</label>
-                    </div>
-                    @error('rating')
-                        <p class="mt-2 text-sm text-red-600 text-center">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Submit Button -->
-                <div class="pt-4">
-                    <button type="submit" 
-                        class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 px-6 rounded-lg hover:from-indigo-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 shadow-lg">
-                        Submit Feedback
-                    </button>
-                </div>
-
-                <p class="text-center text-sm text-gray-500 mt-4">
-                    <span class="text-red-500">*</span> Required fields
-                </p>
-            </form>
+        <!-- Feedback Request -->
+        <div class="bg-blue-100 border-l-4 border-blue-500 p-4 mb-6">
+            <p class="text-blue-800">
+                📝 <strong>Feedback Request:</strong> After the event, we kindly request you to provide your valuable feedback about the event organization, venue facilities, hospitality, and overall experience. Your feedback will help us improve future events.
+            </p>
         </div>
 
-        <!-- Footer -->
-        <div class="text-center mt-8 text-gray-600">
-            <p class="text-sm">Thank you for taking the time to provide your valuable feedback!</p>
-            <p class="text-xs mt-2 text-gray-500">{{ config('app.name') }} © {{ date('Y') }}</p>
+        <!-- Error Messages -->
+        @if ($errors->any())
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                <h3 class="font-semibold text-red-800 mb-2">Please correct the following errors:</h3>
+                <ul class="list-disc list-inside text-red-700 text-sm">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <!-- Feedback Form -->
+        <form action="{{ route('speaker.feedback.store', $temporaryLink->token) }}" method="POST" class="bg-white rounded-lg shadow-md overflow-hidden">
+            @csrf
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-100 border-b-2 border-gray-300">
+                        <tr>
+                            <th class="text-left p-4 font-semibold text-gray-700">NO.</th>
+                            <th class="text-left p-4 font-semibold text-gray-700">PARAMETERS</th>
+                            <th class="text-center p-4 font-semibold text-gray-700">Excellent<br>(5)</th>
+                            <th class="text-center p-4 font-semibold text-gray-700">Very Good<br>(4)</th>
+                            <th class="text-center p-4 font-semibold text-gray-700">Good<br>(3)</th>
+                            <th class="text-center p-4 font-semibold text-gray-700">Average<br>(2)</th>
+                            <th class="text-center p-4 font-semibold text-gray-700">Poor<br>(1)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Question 1 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">1</td>
+                            <td class="p-4">Content of syllabus <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q1_content_of_syllabus" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q1_content_of_syllabus" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q1_content_of_syllabus" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q1_content_of_syllabus" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q1_content_of_syllabus" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 2 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">2</td>
+                            <td class="p-4">Relevance of syllabus to industry/research requirements <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q2_relevance_to_industry" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q2_relevance_to_industry" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q2_relevance_to_industry" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q2_relevance_to_industry" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q2_relevance_to_industry" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 3 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">3</td>
+                            <td class="p-4">Course outcomes are well defined <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q3_course_outcomes" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q3_course_outcomes" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q3_course_outcomes" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q3_course_outcomes" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q3_course_outcomes" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 4 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">4</td>
+                            <td class="p-4">Sufficient reading materials and digital resources provided <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q4_reading_materials" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q4_reading_materials" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q4_reading_materials" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q4_reading_materials" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q4_reading_materials" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 5 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">5</td>
+                            <td class="p-4">Incorporation of advanced topics <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q5_advanced_topics" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q5_advanced_topics" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q5_advanced_topics" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q5_advanced_topics" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q5_advanced_topics" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 6 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">6</td>
+                            <td class="p-4">Pedagogy proposed <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q6_pedagogy" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q6_pedagogy" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q6_pedagogy" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q6_pedagogy" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q6_pedagogy" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 7 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">7</td>
+                            <td class="p-4">Have a desired balance between theory and practical <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q7_theory_practical_balance" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q7_theory_practical_balance" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q7_theory_practical_balance" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q7_theory_practical_balance" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q7_theory_practical_balance" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 8 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">8</td>
+                            <td class="p-4">Assessment methods are fair, measuring the outcomes <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q8_assessment_methods" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q8_assessment_methods" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q8_assessment_methods" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q8_assessment_methods" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q8_assessment_methods" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 9 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">9</td>
+                            <td class="p-4">Project component in the course, if applicable <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q9_project_component" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q9_project_component" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q9_project_component" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q9_project_component" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q9_project_component" value="1" required class="w-5 h-5"></td>
+                        </tr>
+
+                        <!-- Question 10 -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-4 font-medium">10</td>
+                            <td class="p-4">Industrial training/practical exposure in the course, if applicable <span class="text-red-500">*</span></td>
+                            <td class="text-center p-4"><input type="radio" name="q10_industrial_training" value="5" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q10_industrial_training" value="4" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q10_industrial_training" value="3" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q10_industrial_training" value="2" required class="w-5 h-5"></td>
+                            <td class="text-center p-4"><input type="radio" name="q10_industrial_training" value="1" required class="w-5 h-5"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Additional Comments -->
+            <div class="p-6 border-t">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Additional Comments (Optional)
+                </label>
+                <textarea name="additional_comments" rows="4" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Please share any additional feedback or suggestions...">{{ old('additional_comments') }}</textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="p-6 bg-gray-50 border-t flex justify-center">
+                <button type="submit" 
+                    class="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded-lg transition duration-200 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Click Here to Provide Feedback
+                </button>
+            </div>
+        </form>
+
+        <!-- Note -->
+        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+            <p class="text-sm text-blue-800 italic">
+                <strong>Note:</strong> This is a unique link generated specifically for you. Please use it to submit your feedback after the event.
+            </p>
+            <p class="text-sm text-blue-800 mt-2">
+                We look forward to your session and thank you in advance for taking the time to share your feedback!
+            </p>
+            <p class="text-sm text-blue-800 mt-2 font-semibold">
+                Best regards
+            </p>
         </div>
     </div>
 </body>

@@ -56,7 +56,3 @@ class SpeakerApprovalMail extends Mailable
         return [];
     }
 }
-    {
-        return [];
-    }
-}

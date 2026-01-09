@@ -184,6 +184,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{speaker}/approve', [AdminSpeakerController::class, 'approve'])->name('approve');
         Route::post('/{speaker}/reject', [AdminSpeakerController::class, 'reject'])->name('reject');
         Route::delete('/{speaker}', [AdminSpeakerController::class, 'destroy'])->name('destroy');
+        
+        // View feedback responses
+        Route::get('/feedback/responses', [AdminSpeakerController::class, 'feedbackResponses'])->name('feedback.responses');
+        Route::get('/{speaker}/feedback', [AdminSpeakerController::class, 'viewFeedback'])->name('feedback.view');
     });
 });
 
