@@ -45,8 +45,8 @@ class FeedbackAnalysisService
         string $institute = null
     ): array {
         $academicYear = $academicYear ?? $this->getCurrentAcademicYear();
-        $department = $department ?? 'Department of Computer Science & Engineering';
-        $institute = $institute ?? 'Institute Name';
+        $department = $department ?? 'Smt. K. D. Patel Department of Information Technology';
+        $institute = $institute ?? 'Smt. K. D. Patel Department of Information Technology';
 
         // Get all feedback data
         $feedbackData = SpeakerFeedback::all();

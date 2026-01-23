@@ -11,7 +11,6 @@
     <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-8 py-6 rounded-t-lg">
         <div class="text-center">
             <h1 class="text-3xl font-bold mb-2">{{ $title_info['institute'] }}</h1>
-            <h2 class="text-xl font-semibold mb-1">{{ $title_info['department'] }}</h2>
             <h3 class="text-lg font-medium mt-4 border-t border-white/30 pt-4">
                 Analysis of Feedback on Curriculum (External Expert)
             </h3>

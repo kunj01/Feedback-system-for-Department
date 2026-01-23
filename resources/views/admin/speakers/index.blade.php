@@ -1,4 +1,4 @@
-@extends('layouts.app')
+ds('layouts.app')
 
 @section('title', 'Manage External Speakers')
 @section('page-title', 'Manage External Speakers')
