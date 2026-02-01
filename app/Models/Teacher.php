@@ -30,4 +30,10 @@ class Teacher extends Model
     {
         return $this->hasMany(FormAssignment::class);
     }
+
+    // Alias for formAssignments for backward compatibility
+    public function assignments()
+    {
+        return $this->hasMany(FormAssignment::class);
+    }
 }

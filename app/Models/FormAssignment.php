@@ -64,6 +64,14 @@ class FormAssignment extends Model
     }
 
     /**
+     * Get the form response for this assignment.
+     */
+    public function formResponse()
+    {
+        return $this->hasOne(FormResponse::class);
+    }
+
+    /**
      * Scope to get pending assignments.
      */
     public function scopePending($query)

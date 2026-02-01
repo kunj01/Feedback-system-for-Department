@@ -14,6 +14,35 @@
     </a>
 </div>
 
+@if(session('error'))
+    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-sm text-red-800 font-medium">{{ session('error') }}</p>
+        </div>
+    </div>
+@endif
+
+@if($errors->any())
+    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div class="flex-1">
+                <p class="text-sm text-red-800 font-medium mb-2">Please correct the following errors:</p>
+                <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+@endif
+
 @php
     $subjects = [
         1 => ['name' => 'Data Structures', 'code' => 'CSE-301'],
@@ -48,7 +77,7 @@
 </div>
 
 <!-- Feedback Form -->
-<form method="POST" action="{{ route('feedback.submit') }}">
+<form method="POST" action="{{ route('feedback.submit') }}" id="feedbackForm">
     @csrf
     <input type="hidden" name="subject_id" value="{{ $subjectId }}">
     <input type="hidden" name="faculty_id" value="{{ $facultyId }}">
@@ -183,8 +212,78 @@ function autoSave() {
 }
 
 // Clear autosave on successful submit
-document.querySelector('form').addEventListener('submit', function() {
+document.querySelector('#feedbackForm').addEventListener('submit', function(e) {
+    console.log('=== FEEDBACK FORM SUBMISSION STARTED ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Subject ID:', '{{ $subjectId }}');
+    console.log('Faculty ID:', '{{ $facultyId }}');
+    console.log('Form Action:', this.action);
+    console.log('Form Method:', this.method);
+    console.log('User Agent:', navigator.userAgent);
+    
+    // Get all form data
+    const formData = new FormData(this);
+    const formObject = {};
+    formData.forEach((value, key) => {
+        formObject[key] = value;
+    });
+    console.log('Form Data:', formObject);
+    console.log('Form Data (count):', Object.keys(formObject).length, 'fields');
+    
+    // Validate CSRF token
+    if (!formObject._token) {
+        console.error('✗ CSRF token missing!');
+        e.preventDefault();
+        alert('Security token missing. Please refresh the page and try again.');
+        return false;
+    } else {
+        console.log('✓ CSRF token present:', formObject._token.substring(0, 10) + '...');
+    }
+    
+    // Check if all required fields are filled
+    const requiredFields = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'overall_rating', 'subject_id', 'faculty_id'];
+    const missingFields = requiredFields.filter(field => !formObject[field]);
+    
+    if (missingFields.length > 0) {
+        console.error('✗ Missing required fields:', missingFields);
+        e.preventDefault();
+        alert('Please answer all questions before submitting.');
+        return false;
+    } else {
+        console.log('✓ All required fields filled');
+    }
+    
+    // Validate ratings are 1-5
+    const ratingFields = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'overall_rating'];
+    for (const field of ratingFields) {
+        const value = parseInt(formObject[field]);
+        if (value < 1 || value > 5) {
+            console.error('✗ Invalid rating for ' + field + ':', value);
+            e.preventDefault();
+            alert('Invalid rating detected. Please try again.');
+            return false;
+        }
+    }
+    console.log('✓ All ratings valid (1-5)');
+    
+    // Clear autosave
     localStorage.removeItem(AUTOSAVE_KEY);
+    console.log('✓ Autosave cleared');
+    
+    console.log('✓ Form validation passed - submitting to server...');
+    console.log('=== END FORM SUBMISSION LOG ===');
+    
+    // Show loading indicator
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Submitting...';
+    
+    // Re-enable button after 5 seconds (in case of redirect issues)
+    setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }, 5000);
 });
 
 function showNotification(message, type) {

@@ -154,10 +154,15 @@ class FormController extends Controller
                 ->with('student.user', 'subject', 'teacher')
                 ->get();
 
-            // Get active subjects with their teachers
+            // Get active subjects with their teachers (ordered by semester and sort_order)
             $subjects = \App\Models\Subject::where('is_active', true)
                 ->with('teachers')
+                ->orderBy('semester', 'asc')
+                ->orderBy('sort_order', 'asc')
                 ->get();
+
+            // Get multi-teacher mode status from system settings
+            $multiTeacherModeEnabled = \App\Models\SystemSettings::get('multi_teacher_feedback_mode', false);
 
             return view('admin.forms.assign', [
                 'formTitle' => $formTitle,
@@ -165,6 +170,7 @@ class FormController extends Controller
                 'students' => $students,
                 'assignments' => $assignments,
                 'subjects' => $subjects,
+                'multiTeacherModeEnabled' => $multiTeacherModeEnabled,
             ]);
         }
 
@@ -184,10 +190,22 @@ class FormController extends Controller
             abort(404, 'Form assignment not found.');
         }
         
-        // Use first assignment as default
-        $assignment = $allAssignments->first();
+        // Use first pending assignment as default, or first assignment if all completed
+        $assignment = $allAssignments->where('status', 'pending')->first() ?? $allAssignments->first();
+
+        // Check if ALL assignments are completed (for multi-teacher forms)
+        $allCompleted = $allAssignments->every(function($a) {
+            return $a->status === 'completed';
+        });
+
+        // If all assignments are completed, show message
+        if ($allCompleted) {
+            return redirect()->route('forms.index')
+                ->with('info', 'You have already submitted this form for all assigned teachers.');
+        }
 
         // Check if form is active (within feedback period)
+        // Use first pending assignment to check deadline
         if (!$assignment->isActive()) {
             if ($assignment->isUpcoming()) {
                 return redirect()->route('forms.index')
@@ -200,15 +218,19 @@ class FormController extends Controller
             }
         }
 
-        // If already completed, show message
-        if ($assignment->status === 'completed') {
-            return redirect()->route('forms.index')
-                ->with('info', 'You have already submitted this form.');
-        }
-
         // Check if this is the Curriculum Feedback or Academic-Teacher-Industry form
         if (stripos($filename, 'Academic-Teacher-Industry') !== false) {
             return view('student.forms.curriculum-feedback', [
+                'formTitle' => $formTitle,
+                'formName' => $filename,
+                'assignment' => $assignment,
+                'allAssignments' => $allAssignments,
+            ]);
+        }
+
+        // Check if this is the Student Feedback form
+        if (stripos($filename, 'Student-Feedback') !== false || stripos($filename, 'student-feedback') !== false) {
+            return view('student.forms.student-feedback-form', [
                 'formTitle' => $formTitle,
                 'formName' => $filename,
                 'assignment' => $assignment,
@@ -319,86 +341,259 @@ class FormController extends Controller
      */
     public function submit(Request $request, $filename)
     {
-        $student = auth()->user()->student;
-        if (!$student) {
-            abort(403, 'No student profile found.');
-        }
-
-        // Get the specific assignment (especially important for multi-teacher forms)
-        if ($request->has('teacher_assignment_id')) {
-            $assignment = FormAssignment::where('id', $request->teacher_assignment_id)
-                ->where('student_id', $student->id)
-                ->where('form_name', $filename)
-                ->firstOrFail();
-        } else {
-            $assignment = FormAssignment::where('form_name', $filename)
-                ->where('student_id', $student->id)
-                ->firstOrFail();
-        }
-
-        // Check if form is still active
-        if (!$assignment->isActive()) {
-            return redirect()->route('forms.index')
-                ->with('error', 'The submission period for this form has ended.');
-        }
-
-        // Validate form data
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'name' => 'nullable|string|max:255',
-            'responses' => 'required|array',
-            'responses.*' => 'required|in:excellent,very_good,good,average,below_average',
-            'comments_strengths' => 'nullable|string|max:1000',
-            'comments_improvements' => 'nullable|string|max:1000',
-            'comments_other' => 'nullable|string|max:1000',
+        \Log::info('=== FORM SUBMISSION STARTED ===', [
+            'filename' => $filename,
+            'user_id' => auth()->id(),
+            'timestamp' => now()->toDateTimeString(),
+            'ip' => $request->ip(),
+            'request_data' => $request->except(['_token'])
         ]);
 
-        // Merge comments into responses
-        $allResponses = $validated['responses'];
-        if (!empty($validated['comments_strengths'])) {
-            $allResponses['comments_strengths'] = $validated['comments_strengths'];
+        try {
+            $student = auth()->user()->student;
+            if (!$student) {
+                \Log::error('✗ Student profile not found', ['user_id' => auth()->id()]);
+                abort(403, 'No student profile found.');
+            }
+
+            \Log::info('✓ Student found', ['student_id' => $student->id, 'name' => auth()->user()->name]);
+
+            // Get the specific assignment (especially important for multi-teacher forms)
+            if ($request->has('teacher_assignment_id')) {
+                \Log::info('Looking for teacher assignment', ['teacher_assignment_id' => $request->teacher_assignment_id]);
+                $assignment = FormAssignment::where('id', $request->teacher_assignment_id)
+                    ->where('student_id', $student->id)
+                    ->where('form_name', $filename)
+                    ->firstOrFail();
+            } else {
+                \Log::info('Looking for general assignment');
+                $assignment = FormAssignment::where('form_name', $filename)
+                    ->where('student_id', $student->id)
+                    ->firstOrFail();
+            }
+
+            \Log::info('✓ Assignment found', [
+                'assignment_id' => $assignment->id,
+                'status' => $assignment->status,
+                'is_multi_teacher' => $assignment->is_multi_teacher
+            ]);
+
+            // Check if already submitted
+            $existingResponse = \App\Models\FormResponse::where('form_assignment_id', $assignment->id)->first();
+            if ($existingResponse) {
+                \Log::warning('✗ Form already submitted', [
+                    'assignment_id' => $assignment->id,
+                    'response_id' => $existingResponse->id
+                ]);
+                return redirect()->route('forms.index')
+                    ->with('info', 'You have already submitted this form for this teacher.');
+            }
+
+            // Check if form is still active
+            if (!$assignment->isActive()) {
+                \Log::warning('✗ Assignment not active', [
+                    'assignment_id' => $assignment->id,
+                    'start_date' => $assignment->start_date,
+                    'end_date' => $assignment->end_date
+                ]);
+                return redirect()->route('forms.index')
+                    ->with('error', 'The submission period for this form has ended.');
+            }
+
+            \Log::info('✓ Assignment is active', ['assignment_id' => $assignment->id]);
+
+            // Validate form data - handle both curriculum feedback and other forms
+            \Log::info('Starting validation...', ['form_name' => $filename]);
+            
+            // Check if this is curriculum feedback form (has different validation rules)
+            $isCurriculumFeedback = stripos($filename, 'Academic-Teacher-Industry') !== false || 
+                                   stripos($filename, 'Curriculum') !== false;
+            
+            // Check if this is student feedback form
+            $isStudentFeedback = stripos($filename, 'Student-Feedback') !== false || 
+                                stripos($filename, 'student-feedback') !== false;
+            
+            if ($isCurriculumFeedback) {
+                \Log::info('Validating as Curriculum Feedback form');
+                $validated = $request->validate([
+                    'teacher_assignment_id' => 'required|exists:form_assignments,id',
+                    'responses' => 'required|array',
+                    'responses.program' => 'required|string|max:255',
+                    'responses.course' => 'nullable|string|max:255',
+                    'responses.content_of_syllabus' => 'required|integer|min:1|max:5',
+                    'responses.relevance_to_industry' => 'required|integer|min:1|max:5',
+                    'responses.course_outcomes_defined' => 'required|integer|min:1|max:5',
+                    'responses.reading_materials_resources' => 'required|integer|min:1|max:5',
+                    'responses.advanced_topics' => 'required|integer|min:1|max:5',
+                    'responses.pedagogy_proposed' => 'required|integer|min:1|max:5',
+                    'responses.theory_practical_balance' => 'required|integer|min:1|max:5',
+                    'responses.assessment_methods' => 'required|integer|min:1|max:5',
+                    'responses.project_component' => 'required|integer|min:1|max:5',
+                    'responses.industrial_training' => 'required|integer|min:1|max:5',
+                    'responses.additional_suggestions' => 'nullable|string|max:2000',
+                ]);
+            } elseif ($isStudentFeedback) {
+                \Log::info('Validating as Student Feedback form');
+                $validated = $request->validate([
+                    'responses' => 'required|array',
+                    // Section 1 - Student experience (5 questions)
+                    'responses.prepare_for_class.rating' => 'required|string',
+                    'responses.ask_questions_freely.rating' => 'required|string',
+                    'responses.actively_participate.rating' => 'required|string',
+                    'responses.feel_comfortable_sharing.rating' => 'required|string',
+                    'responses.developing_skills.rating' => 'required|string',
+                    // Section 2 - Instructor experience (8 questions)
+                    'responses.instructor_approachable.rating' => 'required|string',
+                    'responses.instructor_effective.rating' => 'required|string',
+                    'responses.presentations_clear.rating' => 'required|string',
+                    'responses.instructor_stimulated.rating' => 'required|string',
+                    'responses.instructor_used_time.rating' => 'required|string',
+                    'responses.instructor_introduces_concepts.rating' => 'required|string',
+                    'responses.instructor_positive_environment.rating' => 'required|string',
+                    'responses.instructor_communicates.rating' => 'required|string',
+                    // Section 3 - Course content (7 questions)
+                    'responses.learning_objectives_clear.rating' => 'required|string',
+                    'responses.content_organized.rating' => 'required|string',
+                    'responses.opportunities_practice.rating' => 'required|string',
+                    'responses.access_materials.rating' => 'required|string',
+                    'responses.content_prepares.rating' => 'required|string',
+                    'responses.teaching_assessments.rating' => 'required|string',
+                    'responses.diverse_perspectives.rating' => 'required|string',
+                    // Optional reasoning fields for "Strongly Disagree" ratings
+                    'responses.*.reasoning' => 'nullable|string|max:1000',
+                    // Section 4 - Open-ended questions (3 questions)
+                    'responses.most_useful' => 'required|string|max:2000',
+                    'responses.missing_topics' => 'required|string|max:2000',
+                    'responses.improvement_suggestions' => 'required|string|max:2000',
+                ]);
+            } else {
+                \Log::info('Validating as generic form');
+                $validated = $request->validate([
+                    'email' => 'required|email',
+                    'name' => 'nullable|string|max:255',
+                    'responses' => 'required|array',
+                    'responses.*' => 'required|in:excellent,very_good,good,average,below_average',
+                    'comments_strengths' => 'nullable|string|max:1000',
+                    'comments_improvements' => 'nullable|string|max:1000',
+                    'comments_other' => 'nullable|string|max:1000',
+                ]);
+            }
+
+            \Log::info('✓ Validation passed', [
+                'responses_count' => count($validated['responses'] ?? []),
+                'is_curriculum_feedback' => $isCurriculumFeedback
+            ]);
+
+            // Prepare response data based on form type
+            if ($isCurriculumFeedback) {
+                $allResponses = $validated['responses'];
+            } else {
+                // Merge comments into responses for generic forms
+                $allResponses = $validated['responses'];
+                if (!empty($validated['comments_strengths'])) {
+                    $allResponses['comments_strengths'] = $validated['comments_strengths'];
+                }
+                if (!empty($validated['comments_improvements'])) {
+                    $allResponses['comments_improvements'] = $validated['comments_improvements'];
+                }
+                if (!empty($validated['comments_other'])) {
+                    $allResponses['comments_other'] = $validated['comments_other'];
+                }
+            }
+
+            \Log::info('Creating form response in database...');
+
+            // Create form response with transaction
+            \DB::beginTransaction();
+            
+            try {
+                $formResponseData = [
+                    'form_assignment_id' => $assignment->id,
+                    'student_id' => $student->id,
+                    'responses' => $allResponses,
+                ];
+                
+                // Add email and name for generic forms (not curriculum or student feedback)
+                if (!$isCurriculumFeedback && !$isStudentFeedback) {
+                    $formResponseData['email'] = $validated['email'];
+                    $formResponseData['name'] = $validated['name'] ?? auth()->user()->name;
+                } else {
+                    $formResponseData['email'] = auth()->user()->email;
+                    $formResponseData['name'] = auth()->user()->name;
+                }
+                
+                $formResponse = \App\Models\FormResponse::create($formResponseData);
+
+                \Log::info('✓✓✓ FORM RESPONSE CREATED IN DATABASE ✓✓✓', [
+                    'form_response_id' => $formResponse->id,
+                    'assignment_id' => $assignment->id,
+                    'student_id' => $student->id
+                ]);
+
+                // Store feedback in storage/app/form_submissions directory for backup
+                $submissionDir = storage_path('app/form_submissions');
+                if (!File::exists($submissionDir)) {
+                    File::makeDirectory($submissionDir, 0755, true);
+                }
+
+                // Create submission data
+                $submissionData = [
+                    'form_response_id' => $formResponse->id,
+                    'form_name' => $filename,
+                    'student_id' => $student->id,
+                    'student_name' => auth()->user()->name,
+                    'student_email' => auth()->user()->email,
+                    'responses' => $allResponses,
+                    'submitted_at' => now()->toDateTimeString(),
+                ];
+
+                // Save to JSON file
+                $submissionFile = $submissionDir . '/' . time() . '_' . $student->id . '_' . $filename . '.json';
+                File::put($submissionFile, json_encode($submissionData, JSON_PRETTY_PRINT));
+
+                \Log::info('✓ Backup JSON file created', ['file' => basename($submissionFile)]);
+
+                // Mark assignment as completed
+                $assignment->markAsCompleted();
+
+                \Log::info('✓ Assignment marked as completed', ['assignment_id' => $assignment->id]);
+
+                \DB::commit();
+
+                \Log::info('✓✓✓ FORM SUBMISSION COMPLETED SUCCESSFULLY ✓✓✓');
+
+                return redirect()->route('forms.index')
+                    ->with('success', 'Thank you! Your form has been submitted successfully.');
+
+            } catch (\Exception $e) {
+                \DB::rollback();
+                \Log::error('✗✗✗ DATABASE ERROR DURING FORM SUBMISSION ✗✗✗', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                throw $e;
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('✗ Validation failed', [
+                'errors' => $e->errors()
+            ]);
+            return back()->withErrors($e->errors())->withInput();
+
+        } catch (\Exception $e) {
+            \Log::error('✗✗✗ UNEXPECTED ERROR IN FORM SUBMISSION ✗✗✗', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()
+                ->with('error', 'Failed to submit form. Please try again. Error: ' . $e->getMessage())
+                ->withInput();
         }
-        if (!empty($validated['comments_improvements'])) {
-            $allResponses['comments_improvements'] = $validated['comments_improvements'];
-        }
-        if (!empty($validated['comments_other'])) {
-            $allResponses['comments_other'] = $validated['comments_other'];
-        }
-
-        // Create form response
-        \App\Models\FormResponse::create([
-            'form_assignment_id' => $assignment->id,
-            'student_id' => $student->id,
-            'email' => $validated['email'],
-            'name' => $validated['name'],
-            'responses' => $allResponses,
-        ]);
-
-        // Store feedback in storage/app/form_submissions directory for backup
-        $submissionDir = storage_path('app/form_submissions');
-        if (!File::exists($submissionDir)) {
-            File::makeDirectory($submissionDir, 0755, true);
-        }
-
-        // Create submission data
-        $submissionData = [
-            'form_name' => $filename,
-            'student_id' => $student->id,
-            'student_name' => auth()->user()->name,
-            'student_email' => auth()->user()->email,
-            'responses' => $validated['responses'],
-            'submitted_at' => now()->toDateTimeString(),
-        ];
-
-        // Save to JSON file
-        $submissionFile = $submissionDir . '/' . time() . '_' . $student->id . '_' . $filename . '.json';
-        File::put($submissionFile, json_encode($submissionData, JSON_PRETTY_PRINT));
-
-        // Mark assignment as completed
-        $assignment->markAsCompleted();
-
-        return redirect()->route('forms.index')
-            ->with('success', 'Thank you! Your form has been submitted successfully.');
     }
 
     /**
@@ -437,6 +632,52 @@ class FormController extends Controller
         }
 
         return back()->with('error', 'Form not found.');
+    }
+
+    /**
+     * View all responses for a form (Admin only).
+     */
+    public function responses($filename)
+    {
+        abort_unless(auth()->user()->hasRole('Admin'), 403, 'Unauthorized action.');
+
+        $filePath = public_path('documents/' . $filename);
+        if (!File::exists($filePath)) {
+            abort(404, 'Form not found.');
+        }
+
+        // Get all responses for this form with student and assignment info
+        $responses = \App\Models\FormResponse::whereHas('formAssignment', function($query) use ($filename) {
+            $query->where('form_name', $filename);
+        })
+        ->with(['student.user', 'formAssignment.teacher', 'formAssignment.subject'])
+        ->latest()
+        ->paginate(20);
+
+        // Extract form title
+        $formTitle = pathinfo($filename, PATHINFO_FILENAME);
+        $formTitle = preg_replace('/^\d+_/', '', $formTitle);
+        $formTitle = ucwords(str_replace('_', ' ', $formTitle));
+
+        // Calculate statistics
+        $totalResponses = $responses->total();
+        $totalAssignments = FormAssignment::where('form_name', $filename)->count();
+        $responseRate = $totalAssignments > 0 ? round(($totalResponses / $totalAssignments) * 100, 1) : 0;
+
+        return view('admin.forms.responses', compact('responses', 'filename', 'formTitle', 'totalResponses', 'totalAssignments', 'responseRate'));
+    }
+
+    /**
+     * View individual response details (Admin only).
+     */
+    public function viewResponse($id)
+    {
+        abort_unless(auth()->user()->hasRole('Admin'), 403, 'Unauthorized action.');
+
+        $response = \App\Models\FormResponse::with(['student.user', 'formAssignment.teacher', 'formAssignment.subject'])
+            ->findOrFail($id);
+
+        return view('admin.forms.view-response', compact('response'));
     }
 
     /**

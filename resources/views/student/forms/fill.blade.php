@@ -36,7 +36,7 @@
         @csrf
 
         <!-- Teacher Selection (for multi-teacher forms) -->
-        @if($allAssignments->count() > 1)
+        @if($allAssignments->count() > 1 && $assignment->is_multi_teacher)
             <div class="card bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                     <svg class="w-6 h-6 mr-2 text-purple-600" fill="currentColor" viewBox="0 0 20 20">

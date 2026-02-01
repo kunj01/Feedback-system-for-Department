@@ -31,12 +31,20 @@
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ $formTitle }}</h2>
                 <p class="text-gray-600">{{ $formName }}</p>
             </div>
-            <a href="{{ route('forms.download', $formName) }}" class="btn-secondary">
-                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                </svg>
-                Download Form
-            </a>
+            <div class="flex gap-2">
+                <a href="{{ route('forms.download', $formName) }}" class="btn-secondary">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Download Form
+                </a>
+                <a href="{{ route('forms.responses', $formName) }}" class="btn-primary">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    View Submissions ({{ $assignments->where('status', 'completed')->count() }})
+                </a>
+            </div>
         </div>
 
         <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
@@ -159,22 +167,22 @@
         <!-- Right Side: Current Assignments & Multi-Teacher Config -->
         <div class="space-y-6">
             <!-- Current Assignments - Clickable Button -->
-            <div class="card bg-gradient-to-br from-gray-400 to-gray-700 border-2 border-gray-500 hover:shadow-xl hover:from-gray-300 hover:to-gray-600 transition-all duration-300 cursor-pointer" onclick="openAssignmentsModal()">
+            <div class="card bg-gradient-to-br from-blue-50 to-slate-100 border-2 border-blue-200 hover:shadow-xl hover:from-blue-100 hover:to-slate-200 transition-all duration-300 cursor-pointer" onclick="openAssignmentsModal()">
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
-                        <h3 class="text-xl font-bold text-black flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <h3 class="text-xl font-bold text-gray-700 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                             </svg>
                             Current Assignments
                         </h3>
-                        <p class="text-sm text-black ml-8 mt-1">{{ $assignments->count() }} student(s) assigned</p>
+                        <p class="text-sm text-gray-600 ml-8 mt-1">{{ $assignments->count() }} student(s) assigned</p>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <span class="px-4 py-2 bg-white text-gray-900 rounded-lg font-semibold text-sm shadow-lg hover:bg-gray-100 transition-colors">
+                        <span class="px-4 py-2 bg-white text-blue-600 rounded-lg font-semibold text-sm shadow-md hover:bg-blue-50 transition-colors">
                             View All
                         </span>
-                        <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                     </div>
@@ -182,25 +190,54 @@
             </div>
 
             <!-- Multi-Teacher Feedback Configuration -->
-            <div class="card overflow-hidden">
-                <div class="w-full flex items-center justify-between p-5 bg-gradient-to-br from-gray-400 to-gray-700 transition-all duration-300">
-                    <div class="flex items-center flex-1">
-                        <svg class="w-6 h-6 mr-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        <div class="text-left">
-                            <h4 class="text-base font-bold text-black">Multi-Teacher Feedback Mode</h4>
-                            <p class="text-xs text-black">Configure subject-wise teacher evaluation</p>
+            <div class="card overflow-hidden border-2 border-blue-200 shadow-md">
+                <div class="w-full p-5 bg-gradient-to-br from-blue-50 to-slate-100 border-b border-blue-200 transition-all duration-300">
+                    <!-- Header Section -->
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+                        <div class="flex items-center flex-1">
+                            <svg class="w-6 h-6 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            <div class="text-left">
+                                <h4 class="text-base font-bold text-gray-700">Multi-Teacher Feedback Mode</h4>
+                                <p class="text-xs text-gray-600">Configure subject-wise teacher evaluation</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions Section -->
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-shrink-0">
+                            <a href="{{ route('admin.subjects.index') }}" target="_blank" class="px-4 py-2 bg-white hover:bg-blue-50 text-blue-600 text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 whitespace-nowrap">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Manage Subjects
+                            </a>
+                            <div class="flex items-center gap-2">
+                                <div class="relative inline-block w-12 h-6 cursor-pointer" onclick="event.stopPropagation(); toggleMultiTeacherToggle();">
+                                    <input type="checkbox" name="is_multi_teacher" id="multiTeacherToggle" class="sr-only">
+                                    <span id="toggleBackground" class="absolute inset-0 bg-gray-300 rounded-full transition-all duration-300 shadow-sm border-2 border-gray-400"></span>
+                                    <span id="toggleCircle" class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md"></span>
+                                </div>
+                                <span id="toggleLabel" class="text-xs font-bold text-white bg-gray-500 px-2 py-1 rounded uppercase">OFF</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 flex-shrink-0">
-                        <div class="relative inline-block w-12 h-6 cursor-pointer" onclick="event.stopPropagation(); toggleMultiTeacherToggle();">
-                            <input type="checkbox" name="is_multi_teacher" id="multiTeacherToggle" class="sr-only">
-                            <span id="toggleBackground" class="absolute inset-0 bg-red-500 rounded-full transition-all duration-300 shadow-md border-2 border-red-600"></span>
-                            <span id="toggleCircle" class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-lg"></span>
+                    
+                    <!-- Warning Banner -->
+                    @if(isset($multiTeacherModeEnabled) && !$multiTeacherModeEnabled)
+                        <div class="mt-3 px-4 py-3 bg-amber-50 rounded-lg shadow-sm">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-amber-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <p class="text-sm text-amber-700 font-medium">
+                                    Global multi-teacher mode is currently disabled in system settings. Enable it from the 
+                                    <a href="{{ route('admin.settings.index') }}" class="underline hover:text-amber-800 font-semibold">Settings page</a> 
+                                    to use this feature.
+                                </p>
+                            </div>
                         </div>
-                        <span id="toggleLabel" class="text-xs font-bold text-red-600 uppercase">OFF</span>
-                    </div>
+                    @endif
                 </div>
                 
                 <!-- Multi-Teacher Configuration (Collapsible) -->
@@ -212,21 +249,33 @@
                             <div class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-white">
                                 @if(isset($subjects) && $subjects->count() > 0)
                                     @foreach($subjects as $subject)
-                                        <label class="flex items-center p-2 hover:bg-blue-50 rounded cursor-pointer">
+                                        <label class="flex items-center p-2 hover:bg-indigo-50 rounded cursor-pointer transition-colors">
                                             <input 
                                                 type="radio" 
                                                 name="subject_id" 
                                                 value="{{ $subject->id }}"
-                                                class="form-radio h-4 w-4 text-blue-600 subject-radio"
+                                                class="form-radio h-4 w-4 text-indigo-600 subject-radio"
                                                 onchange="toggleSubjectTeachers({{ $subject->id }})">
-                                            <div class="ml-3">
+                                            <div class="ml-3 flex-1">
                                                 <p class="text-sm font-medium text-gray-900">{{ $subject->name }}</p>
-                                                <p class="text-xs text-gray-500">{{ $subject->code }} - {{ $subject->teachers->count() }} teachers</p>
+                                                <p class="text-xs text-gray-500">{{ $subject->code }} • Sem {{ $subject->semester }} • {{ $subject->teachers->count() }} teacher(s)</p>
                                             </div>
+                                            @if($subject->teachers->count() === 0)
+                                                <span class="text-xs px-2 py-1 bg-red-100 text-red-600 rounded">No teachers</span>
+                                            @endif
                                         </label>
                                     @endforeach
                                 @else
-                                    <p class="text-sm text-gray-500 p-2">No subjects available. Please add subjects and teachers first.</p>
+                                    <div class="text-center py-6">
+                                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                        </svg>
+                                        <p class="text-sm text-gray-600 font-medium">No subjects available</p>
+                                        <p class="text-xs text-gray-500 mt-1">Please add subjects and teachers first</p>
+                                        <a href="{{ route('admin.subjects.index') }}" class="inline-block mt-3 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition">
+                                            Go to Subject Management
+                                        </a>
+                                    </div>
                                 @endif
                             </div>
                         </div>
@@ -282,7 +331,7 @@
 </div>
 
 <!-- Assignments Modal -->
-<div id="assignmentsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4 transition-opacity duration-300" onclick="if(event.target === this) closeAssignmentsModal()">
+<div id="assignmentsModal" class="hidden fixed inset-0 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4 transition-all duration-300 backdrop-blur-lg" onclick="if(event.target === this) closeAssignmentsModal()" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);">
     <div id="modalContent" class="relative p-6 border w-full max-w-4xl shadow-2xl rounded-xl bg-white transform transition-all duration-300 scale-95 opacity-0" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-4 pb-3 border-b">
             <h3 class="text-2xl font-bold text-gray-900 flex items-center">
@@ -291,7 +340,7 @@
                 </svg>
                 All Assigned Students ({{ $assignments->count() }})
             </h3>
-            <button onclick="closeAssignmentsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <button onclick="closeAssignmentsModal()" class="text-gray-400 hover:text-gray-600 transition-colors hover:rotate-90 hover:scale-110">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>

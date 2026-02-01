@@ -13,7 +13,16 @@ return new class extends Migration
     {
         Schema::create('feedback', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
+            $table->unsignedBigInteger('subject_id');
+            $table->unsignedBigInteger('faculty_id');
+            $table->json('responses'); // Store all question responses as JSON
+            $table->integer('overall_rating');
+            $table->text('comments')->nullable();
             $table->timestamps();
+            
+            // Prevent duplicate submissions
+            $table->unique(['student_id', 'subject_id', 'faculty_id']);
         });
     }
 
