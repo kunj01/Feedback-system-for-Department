@@ -181,16 +181,6 @@
                             </svg>
                             Sign In
                         </button>
-
-                        <!-- Quick Login Credentials -->
-                        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <p class="text-xs font-semibold text-blue-800 mb-2">Demo Credentials:</p>
-                            <div class="space-y-1 text-xs text-blue-700">
-                                <p><span class="font-medium">Admin:</span> admin@system.com / admin123</p>
-                                <p><span class="font-medium">TnP:</span> tnp@system.com / tnp123</p>
-                                <p><span class="font-medium">Student:</span> student1@system.com / student123</p>
-                            </div>
-                        </div>
                     </form>
 
                     <!-- Footer Links -->

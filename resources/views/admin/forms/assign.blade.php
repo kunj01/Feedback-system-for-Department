@@ -15,15 +15,6 @@
         </a>
     </div>
 
-    @if(session('success'))
-        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            {{ session('success') }}
-        </div>
-    @endif
-
     <!-- Form Details Card -->
     <div class="card mb-6">
         <div class="flex items-start justify-between">
@@ -126,7 +117,16 @@
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Students</label>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Select Students</label>
+                        <label class="flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                id="select-all-students" 
+                                class="form-checkbox h-5 w-5 text-blue-600 mr-2">
+                            <span class="text-sm font-medium text-blue-600">Select All</span>
+                        </label>
+                    </div>
                     <div class="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-4">
                         @foreach($students as $student)
                             @php
@@ -678,5 +678,31 @@ function saveMultiTeacherConfig() {
         button.disabled = false;
     });
 }
+
+// Select All Students functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select-all-students');
+    const studentCheckboxes = document.querySelectorAll('input[name="student_ids[]"]:not([disabled])');
+    
+    if (selectAllCheckbox) {
+        // Handle Select All checkbox click
+        selectAllCheckbox.addEventListener('change', function() {
+            studentCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+        
+        // Update Select All checkbox based on individual checkboxes
+        studentCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const allChecked = Array.from(studentCheckboxes).every(cb => cb.checked);
+                const anyChecked = Array.from(studentCheckboxes).some(cb => cb.checked);
+                
+                selectAllCheckbox.checked = allChecked;
+                selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+            });
+        });
+    }
+});
 </script>
 @endsection

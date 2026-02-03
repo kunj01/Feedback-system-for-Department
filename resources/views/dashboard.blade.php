@@ -16,11 +16,21 @@
     
     if (!$isAdmin && !$isFaculty && isset($assignedForms)) {
         // Group assignments by form_name for students
+        // This ensures that forms with multiple teachers are grouped together as ONE form
         $groupedAssignments = $assignedForms->groupBy('form_name');
+        
+        // Total unique forms (not individual teacher assignments)
         $totalAssignments = $groupedAssignments->count();
+        
+        // Count pending forms (forms that have at least one pending teacher feedback)
+        // A form is pending if ANY teacher feedback is not yet submitted
         $pendingAssignments = $groupedAssignments->filter(function($group) {
             return $group->contains('status', 'pending');
         })->count();
+        
+        // Count fully completed forms (forms where ALL teacher feedbacks are submitted)
+        // A form is completed ONLY when feedback for ALL teachers has been submitted
+        // Example: If a form has 2 teachers, both feedbacks must be completed
         $completedAssignments = $groupedAssignments->filter(function($group) {
             return $group->every(fn($a) => $a->status === 'completed');
         })->count();
@@ -258,22 +268,60 @@
                         $firstAssignment = $formAssignments->first();
                         $allCompleted = $formAssignments->every(fn($a) => $a->status === 'completed');
                         $hasMultipleTeachers = $formAssignments->count() > 1;
+                        
+                        // Calculate urgency based on deadline
+                        $deadline = $firstAssignment->deadline;
+                        $isUrgent = false;
+                        $isDueSoon = false;
+                        $daysRemaining = 0;
+                        
+                        if ($deadline && !$allCompleted) {
+                            $daysRemaining = now()->diffInDays($deadline, false);
+                            $isUrgent = $daysRemaining <= 2 && $daysRemaining >= 0; // 2 days or less
+                            $isDueSoon = $daysRemaining > 2 && $daysRemaining <= 7; // 3-7 days
+                        }
+                        
+                        // Get submission timestamp for completed forms
+                        $submittedAt = null;
+                        if ($allCompleted) {
+                            // Get the latest submission time among all teachers
+                            $submittedAt = $formAssignments->max('updated_at');
+                        }
+                        
+                        // Determine card styling
+                        $cardBgClass = $allCompleted ? 'bg-green-50 border-2 border-green-300' : 
+                                      ($isUrgent ? 'bg-red-50 border-2 border-red-400' : 
+                                      ($isDueSoon ? 'bg-orange-50 border-2 border-orange-300' : 'bg-white border border-gray-200'));
+                        
+                        $iconBgClass = $allCompleted ? 'bg-green-100' : 
+                                      ($isUrgent ? 'bg-red-100' : 
+                                      ($isDueSoon ? 'bg-orange-100' : 'bg-blue-100'));
+                        
+                        $iconColorClass = $allCompleted ? 'text-green-600' : 
+                                         ($isUrgent ? 'text-red-600' : 
+                                         ($isDueSoon ? 'text-orange-600' : 'text-blue-600'));
                     @endphp
-                    <div class="card hover:shadow-lg transition-all duration-200 {{ $allCompleted ? 'bg-green-50 border-green-200' : 'bg-white' }}">
+                    <div class="card hover:shadow-lg transition-all duration-200 {{ $cardBgClass }}">
                         <div class="flex items-center justify-between">
                             <!-- Form Icon & Details -->
                             <div class="flex items-center space-x-4 flex-1">
                                 <!-- Status Icon -->
                                 <div class="flex-shrink-0">
                                     @if($allCompleted)
-                                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="w-12 h-12 rounded-full {{ $iconBgClass }} flex items-center justify-center">
+                                            <svg class="w-6 h-6 {{ $iconColorClass }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
                                         </div>
+                                    @elseif($isUrgent)
+                                        <div class="w-12 h-12 rounded-full {{ $iconBgClass }} flex items-center justify-center animate-pulse">
+                                            <svg class="w-6 h-6 {{ $iconColorClass }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                            </svg>
+                                        </div>
                                     @else
-                                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="w-12 h-12 rounded-full {{ $iconBgClass }} flex items-center justify-center">
+                                            <svg class="w-6 h-6 {{ $iconColorClass }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                             </svg>
                                         </div>
@@ -285,19 +333,32 @@
                                     <h4 class="text-lg font-semibold text-gray-800 mb-1 truncate">
                                         {{ $firstAssignment->form_title }}
                                     </h4>
-                                    <div class="flex items-center space-x-4 text-sm text-gray-600">
+                                    <div class="flex flex-col space-y-1 text-sm text-gray-600">
                                         <span class="flex items-center">
                                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
                                             Assigned {{ $firstAssignment->created_at->diffForHumans() }}
                                         </span>
-                                        @if($allCompleted)
-                                            <span class="flex items-center text-green-600">
+                                        
+                                        @if($deadline && !$allCompleted)
+                                            <span class="flex items-center {{ $isUrgent ? 'text-red-600 font-semibold' : ($isDueSoon ? 'text-orange-600 font-medium' : '') }}">
                                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                 </svg>
-                                                All Completed
+                                                @if($isUrgent)
+                                                    🔴 URGENT: Due {{ $deadline->diffForHumans() }}
+                                                @elseif($isDueSoon)
+                                                    ⚠️ Due {{ $deadline->diffForHumans() }}
+                                                @else
+                                                    Due {{ $deadline->format('M d, Y') }}
+                                                @endif
+                                            </span>
+                                        @endif
+                                        
+                                        @if($allCompleted && $submittedAt)
+                                            <span class="flex items-center text-green-600 font-medium">
+                                                Submitted on {{ $submittedAt->format('M d, Y \a\t g:i A') }}
                                             </span>
                                         @endif
                                     </div>
@@ -306,11 +367,19 @@
                                 <!-- Status Badge -->
                                 <div class="flex-shrink-0 hidden sm:block">
                                     @if($allCompleted)
-                                        <span class="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                                        <span class="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-semibold border border-green-300">
                                             ✓ Completed
                                         </span>
+                                    @elseif($isUrgent)
+                                        <span class="px-4 py-2 bg-red-100 text-red-800 rounded-full text-sm font-bold border border-red-300 animate-pulse">
+                                            🔥 URGENT
+                                        </span>
+                                    @elseif($isDueSoon)
+                                        <span class="px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold border border-orange-300">
+                                            ⏰ Due Soon
+                                        </span>
                                     @else
-                                        <span class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
+                                        <span class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold border border-yellow-300">
                                             ⏳ Pending
                                         </span>
                                     @endif
@@ -357,7 +426,6 @@
                     <h3 class="text-sm font-bold text-blue-800 mb-2">💡 Quick Tips:</h3>
                     <ul class="list-disc list-inside space-y-1 text-sm text-blue-700">
                         <li>Click <strong>"Fill Form Now"</strong> to complete pending forms</li>
-                        <li>Download forms to fill offline if needed</li>
                         <li>Track your progress with the completion status</li>
                         <li>Completed forms are highlighted in green</li>
                     </ul>

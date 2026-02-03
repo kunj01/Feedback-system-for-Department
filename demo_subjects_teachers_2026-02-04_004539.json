@@ -1,0 +1,176 @@
+{
+    "exported_at": "2026-02-04 00:45:39",
+    "subjects": [
+     {
+            "id": 3,
+            "name": "Language Processors",
+            "code": "IT365",
+            "semester": 6,
+            "credits": null,
+            "sort_order": 1,
+            "is_active": true
+        },
+        {
+            "id": 4,
+            "name": "CRYPTOGRAPHY \u200e& \u200eNETWORK \u200eSECURITY",
+            "code": "IT348",
+            "semester": 6,
+            "credits": null,
+            "sort_order": 2,
+            "is_active": true
+        },
+        {
+            "id": 5,
+            "name": "MOBILE APPLICATION \u200eDEVELOPMENT",
+            "code": "IT366",
+            "semester": 6,
+            "credits": null,
+            "sort_order": 3,
+            "is_active": true
+        },
+        {
+            "id": 6,
+            "name": "Cloud Computing",
+            "code": "IT367",
+            "semester": 6,
+            "credits": null,
+            "sort_order": 4,
+            "is_active": true
+        }
+    ],
+    "teachers": [
+        {
+            "id": 4,
+            "name": "Dr. Purvi Prajapati",
+            "email": "kunj5706@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 5,
+            "name": "Jalpesh Vasa",
+            "email": "kunj5701@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 6,
+            "name": "Dr. Priyanka Patel",
+            "email": "kunj5702@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 7,
+            "name": "Dr. Sanket Suthar",
+            "email": "kunj5703@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 8,
+            "name": "Dr. Pritesh Prajapati",
+            "email": "kunj5704@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 9,
+            "name": "Ravi Patel",
+            "email": "kunj5705@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 10,
+            "name": "Madhav Ajwalia",
+            "email": "kunj5707@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 11,
+            "name": "Nishat Shaikh",
+            "email": "kunj5708@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 12,
+            "name": "Chayya Zala",
+            "email": "kunj5709@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 13,
+            "name": "Dr. Bimal Patel",
+            "email": "kunj5710@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        },
+        {
+            "id": 14,
+            "name": "Sagar Patel",
+            "email": "kunj5711@gmail.com",
+            "phone": null,
+            "department": "IT",
+            "designation": "AP",
+            "is_active": true
+        }
+    ],
+    "subject_teacher_relations": [
+        {
+            "subject_id": 3,
+            "teacher_id": 12
+        },
+        {
+            "subject_id": 3,
+            "teacher_id": 4
+        },
+        {
+            "subject_id": 4,
+            "teacher_id": 8
+        },
+        {
+            "subject_id": 4,
+            "teacher_id": 10
+        },
+        {
+            "subject_id": 5,
+            "teacher_id": 14
+        },
+        {
+            "subject_id": 6,
+            "teacher_id": 7
+        },
+        {
+            "subject_id": 6,
+            "teacher_id": 9
+        },
+        {
+            "subject_id": 5,
+            "teacher_id": 5
+        }
+    ]
+}

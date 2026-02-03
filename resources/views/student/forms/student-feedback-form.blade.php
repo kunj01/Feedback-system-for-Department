@@ -4,6 +4,32 @@
 @section('page-title', 'Student Feedback Form')
 
 @section('content')
+<style>
+/* Smooth transitions for reasoning textareas */
+[id^="reasoning_"] {
+    transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.3s ease-in-out;
+}
+
+[id^="reasoning_"].show {
+    max-height: 250px !important;
+    opacity: 1 !important;
+}
+
+[id^="reasoning_"].hidden {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    margin-top: 0 !important;
+}
+
+[id^="reasoning_"] textarea {
+    transition: transform 0.2s ease-in-out;
+}
+
+[id^="reasoning_"].show textarea {
+    transform: translateY(0);
+}
+</style>
+
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
         <div class="p-6 sm:px-20 bg-white border-b border-gray-200">
@@ -13,6 +39,67 @@
                     <p class="mt-4 text-sm text-gray-500">
                         Your feedback is valuable and will help us improve the quality of education.
                     </p>
+                </div>
+
+                <!-- Instructions Section (Collapsible) -->
+                <div class="mb-8 bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
+                    <button type="button" onclick="toggleInstructions()" 
+                            class="w-full px-6 py-4 flex items-center justify-between hover:bg-blue-100 transition">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-lg font-semibold text-blue-900">How to Fill This Form</span>
+                        </div>
+                        <svg id="instructionsChevron" class="w-5 h-5 text-blue-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    
+                    <div id="instructionsContent" class="hidden px-6 py-4 bg-white border-t border-blue-200">
+                        <div class="space-y-4 text-sm text-gray-700">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div>
+                                    <p class="font-semibold text-gray-900 mb-1">Answer All Rating Questions</p>
+                                    <p>Please provide a rating for each question using the 5-point scale (Strongly Agree to Strongly Disagree).</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div>
+                                    <p class="font-semibold text-gray-900 mb-1">Strongly Disagree Requires Reasoning</p>
+                                    <p>When you select <span class="font-medium text-red-600">"Strongly Disagree"</span>, a text box will appear. You <span class="font-medium">must</span> provide an explanation for your rating before you can submit the form.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-amber-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div>
+                                    <p class="font-semibold text-gray-900 mb-1">No Editing After Submission</p>
+                                    <p>Once you submit this feedback, you <span class="font-medium">cannot edit</span> your responses. Please review your answers carefully before submitting.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-purple-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div>
+                                    <p class="font-semibold text-gray-900 mb-1">Be Honest & Constructive</p>
+                                    <p>Your responses are confidential and will be used to improve the course. Please be honest and provide constructive feedback.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Error Messages -->
@@ -215,6 +302,12 @@
                                               style="min-height: 100px;"
                                               class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white"
                                               placeholder="Explain your rating..."></textarea>
+                                    <p id="error_msg_{{ $question['field'] }}" class="mt-2 text-sm text-red-600 font-medium hidden">
+                                        <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        This field is required. Please explain your reasoning before submitting.
+                                    </p>
                                 </div>
                             </div>
                             @endforeach
@@ -287,6 +380,12 @@
                                               style="min-height: 100px;"
                                               class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white"
                                               placeholder="Explain your rating..."></textarea>
+                                    <p id="error_msg_{{ $question['field'] }}" class="mt-2 text-sm text-red-600 font-medium hidden">
+                                        <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        This field is required. Please explain your reasoning before submitting.
+                                    </p>
                                 </div>
                             </div>
                             @endforeach
@@ -358,6 +457,12 @@
                                               style="min-height: 100px;"
                                               class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white"
                                               placeholder="Explain your rating..."></textarea>
+                                    <p id="error_msg_{{ $question['field'] }}" class="mt-2 text-sm text-red-600 font-medium hidden">
+                                        <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        This field is required. Please explain your reasoning before submitting.
+                                    </p>
                                 </div>
                             </div>
                             @endforeach
@@ -430,50 +535,137 @@
 <div class="h-20"></div>
 
 <script>
+// Toggle instructions section with animation
+function toggleInstructions() {
+    const content = document.getElementById('instructionsContent');
+    const chevron = document.getElementById('instructionsChevron');
+    
+    if (content.classList.contains('hidden')) {
+        // Show with animation
+        content.classList.remove('hidden');
+        content.style.maxHeight = '0px';
+        content.style.opacity = '0';
+        content.style.transform = 'translateY(-10px)';
+        
+        // Trigger animation
+        requestAnimationFrame(() => {
+            content.style.transition = 'all 0.4s ease-out';
+            content.style.maxHeight = '600px';
+            content.style.opacity = '1';
+            content.style.transform = 'translateY(0)';
+        });
+        
+        chevron.classList.add('rotate-180');
+        
+        // Animate instruction items one by one
+        const items = content.querySelectorAll('.flex.items-start');
+        items.forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(-20px)';
+            setTimeout(() => {
+                item.style.transition = 'all 0.3s ease-out';
+                item.style.opacity = '1';
+                item.style.transform = 'translateX(0)';
+            }, 100 + (index * 100)); // Stagger animation
+        });
+    } else {
+        // Hide with animation
+        content.style.transition = 'all 0.3s ease-in';
+        content.style.maxHeight = '0px';
+        content.style.opacity = '0';
+        content.style.transform = 'translateY(-10px)';
+        
+        chevron.classList.remove('rotate-180');
+        
+        setTimeout(() => {
+            content.classList.add('hidden');
+        }, 300);
+    }
+}
+
 // Handle rating change - show textarea only for "Strongly Disagree"
 function handleRatingChange(questionField, selectedValue) {
     const reasoningDiv = document.getElementById('reasoning_' + questionField);
     const reasoningTextarea = document.getElementById('reasoning_text_' + questionField);
     
     console.log('Rating changed:', questionField, selectedValue);
-    console.log('Reasoning div found:', reasoningDiv);
-    console.log('Reasoning textarea found:', reasoningTextarea);
     
     if (!reasoningDiv || !reasoningTextarea) {
-        console.error('Elements not found!');
+        console.error('Elements not found for:', questionField);
         return;
     }
     
-    // Hide all other reasoning textareas first
+    // Hide all other reasoning textareas that have text (already answered) with smooth transition
     document.querySelectorAll('[id^="reasoning_"]').forEach(div => {
         if (div.id !== 'reasoning_' + questionField) {
-            div.classList.add('hidden');
-            div.style.display = 'none';
             const textarea = div.querySelector('textarea');
-            if (textarea) {
-                textarea.style.display = 'none';
-                if (!textarea.value.trim()) {
-                    textarea.required = false;
+            if (textarea && textarea.value.trim()) {
+                // This textarea has text, hide it smoothly
+                div.classList.remove('show');
+                div.classList.add('hidden');
+                
+                // Hide error message too
+                const fieldName = textarea.id.replace('reasoning_text_', '');
+                const errorMsg = document.getElementById('error_msg_' + fieldName);
+                if (errorMsg) {
+                    errorMsg.classList.add('hidden');
                 }
+                
+                console.log('✓ Hiding filled textarea:', textarea.id);
             }
         }
     });
     
+    // Clear any previous error styling for current textarea
+    reasoningTextarea.classList.remove('border-red-500', '!border-4', 'shake');
+    const currentErrorMsg = document.getElementById('error_msg_' + questionField);
+    if (currentErrorMsg) {
+        currentErrorMsg.classList.add('hidden');
+    }
+    
     // Only show textarea for "Strongly Disagree"
     if (selectedValue === 'Strongly Disagree') {
-        console.log('Showing textarea for:', questionField);
+        console.log('✓ Showing textarea for:', questionField, '(Strongly Disagree selected)');
+        
+        // Show the textarea with smooth transition
         reasoningDiv.classList.remove('hidden');
+        reasoningDiv.classList.add('show');
         reasoningDiv.style.display = 'block';
-        reasoningTextarea.style.display = 'block';
+        
+        // Make it required
         reasoningTextarea.required = true;
-        reasoningTextarea.focus();
+        reasoningTextarea.setAttribute('required', 'required');
+        
+        // Focus on it after transition
+        setTimeout(() => {
+            reasoningTextarea.focus();
+        }, 300);
+        
+        console.log('Textarea status:', {
+            id: reasoningTextarea.id,
+            required: reasoningTextarea.required,
+            visible: !reasoningDiv.classList.contains('hidden'),
+            parentVisible: reasoningDiv.style.display !== 'none'
+        });
     } else {
-        // Hide and clear textarea for other options
-        console.log('Hiding textarea for:', questionField);
+        // Hide and clear textarea for other options with smooth transition
+        console.log('✓ Hiding textarea for:', questionField, '(' + selectedValue + ' selected)');
+        
+        reasoningDiv.classList.remove('show');
         reasoningDiv.classList.add('hidden');
-        reasoningDiv.style.display = 'none';
-        reasoningTextarea.style.display = 'none';
+        
+        // After transition completes, set display none
+        setTimeout(() => {
+            if (reasoningDiv.classList.contains('hidden')) {
+                reasoningDiv.style.display = 'none';
+            }
+        }, 400);
+        
+        // Remove required attribute
         reasoningTextarea.required = false;
+        reasoningTextarea.removeAttribute('required');
+        
+        // Clear the value
         reasoningTextarea.value = '';
     }
 }
@@ -528,41 +720,95 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Check for empty reasoning textareas when "Strongly Disagree" is selected
-        const visibleTextareas = document.querySelectorAll('[id^="reasoning_text_"]');
+        const allTextareas = document.querySelectorAll('[id^="reasoning_text_"]');
         let hasEmptyRequired = false;
-        let emptyFieldLabel = '';
+        let emptyFields = [];
         
-        visibleTextareas.forEach(textarea => {
-            if (textarea.required && textarea.style.display !== 'none' && !textarea.classList.contains('hidden')) {
-                if (!textarea.value.trim()) {
-                    hasEmptyRequired = true;
-                    // Highlight the empty textarea
-                    textarea.classList.add('border-red-500', '!border-4');
-                    textarea.focus();
-                    
-                    // Find the question label
-                    const reasoningDiv = textarea.closest('[id^="reasoning_"]');
-                    if (reasoningDiv) {
-                        const questionDiv = reasoningDiv.previousElementSibling;
-                        if (questionDiv) {
-                            const label = questionDiv.querySelector('p');
-                            if (label) {
-                                emptyFieldLabel = label.textContent.trim();
-                            }
+        // First, clear all previous error styling and error messages
+        allTextareas.forEach(textarea => {
+            textarea.classList.remove('border-red-500', '!border-4', 'shake');
+            
+            // Hide error message for this textarea
+            const fieldName = textarea.id.replace('reasoning_text_', '');
+            const errorMsg = document.getElementById('error_msg_' + fieldName);
+            if (errorMsg) {
+                errorMsg.classList.add('hidden');
+            }
+        });
+        
+        // Now check each textarea
+        allTextareas.forEach(textarea => {
+            const reasoningDiv = textarea.closest('[id^="reasoning_"]');
+            
+            // Check if this textarea is visible and required
+            const isVisible = reasoningDiv && 
+                             !reasoningDiv.classList.contains('hidden') && 
+                             reasoningDiv.style.display !== 'none' &&
+                             textarea.style.display !== 'none';
+            
+            const isRequired = textarea.required || textarea.hasAttribute('required');
+            
+            console.log('Checking textarea:', textarea.id, {
+                isVisible,
+                isRequired,
+                value: textarea.value.trim(),
+                parentDisplay: reasoningDiv?.style.display,
+                parentHidden: reasoningDiv?.classList.contains('hidden')
+            });
+            
+            // If visible AND required AND empty, it's an error
+            if (isVisible && isRequired && !textarea.value.trim()) {
+                hasEmptyRequired = true;
+                
+                // Highlight the empty textarea
+                textarea.classList.add('border-red-500', '!border-4');
+                
+                // Show error message for this textarea
+                const fieldName = textarea.id.replace('reasoning_text_', '');
+                const errorMsg = document.getElementById('error_msg_' + fieldName);
+                if (errorMsg) {
+                    errorMsg.classList.remove('hidden');
+                }
+                
+                // Find the question label
+                if (reasoningDiv) {
+                    const questionDiv = reasoningDiv.previousElementSibling;
+                    if (questionDiv) {
+                        const label = questionDiv.querySelector('p');
+                        if (label) {
+                            const questionText = label.textContent.trim();
+                            emptyFields.push(questionText);
                         }
                     }
-                } else {
-                    textarea.classList.remove('border-red-500', '!border-4');
                 }
             }
         });
         
         if (hasEmptyRequired) {
             e.preventDefault();
-            alert('Please provide reasoning for your "Strongly Disagree" rating before submitting.\n\nThe reasoning field is required and cannot be left blank.');
-            console.log('Submission blocked: Empty reasoning field');
+            e.stopPropagation();
+            
+            // Scroll to first empty field
+            const firstEmptyTextarea = document.querySelector('[id^="reasoning_text_"].border-red-500');
+            if (firstEmptyTextarea) {
+                firstEmptyTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                    firstEmptyTextarea.focus();
+                }, 300);
+            }
+            
+            // Show detailed error message
+            let errorMessage = '⚠️ Required Reasoning Missing\n\n';
+            errorMessage += 'You have selected "Strongly Disagree" for the following question(s), which requires you to provide reasoning:\n\n';
+            errorMessage += emptyFields.map((field, idx) => `${idx + 1}. ${field}`).join('\n');
+            errorMessage += '\n\nPlease provide your reasoning in the text box(es) highlighted in red before submitting.';
+            
+            alert(errorMessage);
+            console.error('Submission blocked: Empty reasoning field(s) for questions:', emptyFields);
             return false;
         }
+        
+        console.log('✓ All required reasoning fields filled');
         
         // Show confirmation
         if (!confirm('Are you sure you want to submit this feedback? You cannot edit it after submission.')) {
@@ -589,7 +835,342 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     });
     
+    // Add real-time validation for reasoning textareas
+    document.querySelectorAll('[id^="reasoning_text_"]').forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            const fieldName = this.id.replace('reasoning_text_', '');
+            const errorMsg = document.getElementById('error_msg_' + fieldName);
+            
+            // Remove error styling and message when user starts typing
+            if (this.value.trim()) {
+                this.classList.remove('border-red-500', '!border-4');
+                if (errorMsg) {
+                    errorMsg.classList.add('hidden');
+                }
+            }
+        });
+        
+        // Also validate on blur
+        textarea.addEventListener('blur', function() {
+            const reasoningDiv = this.closest('[id^="reasoning_"]');
+            const isVisible = reasoningDiv && 
+                             !reasoningDiv.classList.contains('hidden') && 
+                             reasoningDiv.style.display !== 'none' &&
+                             this.style.display !== 'none';
+            
+            const fieldName = this.id.replace('reasoning_text_', '');
+            const errorMsg = document.getElementById('error_msg_' + fieldName);
+            
+            if (this.required && isVisible) {
+                if (!this.value.trim()) {
+                    this.classList.add('border-red-500', '!border-4');
+                    if (errorMsg) {
+                        errorMsg.classList.remove('hidden');
+                    }
+                } else {
+                    this.classList.remove('border-red-500', '!border-4');
+                    if (errorMsg) {
+                        errorMsg.classList.add('hidden');
+                    }
+                }
+            }
+        });
+    });
+    
     console.log('✓ Student Feedback form initialized');
+    
+    // ===== AUTO-SAVE FUNCTIONALITY =====
+    const formKey = 'studentFeedback_' + (document.querySelector('[name="assignment_id"]')?.value || 'default');
+    let autosaveTimeout;
+    
+    // Save form data to localStorage
+    function saveFormData() {
+        const formData = {};
+        
+        // Save all radio buttons
+        document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+            formData[radio.name] = radio.value;
+        });
+        
+        // Save all textareas
+        document.querySelectorAll('textarea').forEach(textarea => {
+            if (textarea.value.trim()) {
+                formData[textarea.name] = textarea.value;
+            }
+        });
+        
+        // Save selected teacher if exists
+        const teacherSelect = document.querySelector('[name="teacher_id"]');
+        if (teacherSelect) {
+            formData['teacher_id'] = teacherSelect.value;
+        }
+        
+        // Save to localStorage
+        try {
+            localStorage.setItem(formKey, JSON.stringify({
+                data: formData,
+                savedAt: new Date().toISOString()
+            }));
+            console.log('✓ Form data auto-saved');
+        } catch (e) {
+            console.error('Failed to save form data:', e);
+        }
+    }
+    
+    // Load form data from localStorage
+    function loadFormData() {
+        try {
+            const saved = localStorage.getItem(formKey);
+            if (!saved) return;
+            
+            const { data, savedAt } = JSON.parse(saved);
+            const savedDate = new Date(savedAt);
+            const hoursSince = (new Date() - savedDate) / (1000 * 60 * 60);
+            
+            // Don't load data older than 7 days
+            if (hoursSince > 168) {
+                localStorage.removeItem(formKey);
+                return;
+            }
+            
+            console.log('Loading saved draft from:', savedDate.toLocaleString());
+            
+            // Restore radio buttons
+            Object.keys(data).forEach(name => {
+                if (name.includes('[rating]')) {
+                    const radio = document.querySelector(`input[name="${name}"][value="${data[name]}"]`);
+                    if (radio) {
+                        radio.checked = true;
+                        
+                        // Trigger the rating change handler
+                        const match = name.match(/responses\[([^\]]+)\]\[rating\]/);
+                        if (match) {
+                            handleRatingChange(match[1], data[name]);
+                        }
+                    }
+                }
+            });
+            
+            // Restore textareas (after a small delay to ensure reasoning textareas are visible)
+            setTimeout(() => {
+                Object.keys(data).forEach(name => {
+                    if (!name.includes('[rating]') && name !== 'teacher_id') {
+                        const textarea = document.querySelector(`textarea[name="${name}"]`);
+                        if (textarea) {
+                            textarea.value = data[name];
+                        }
+                    }
+                });
+                
+                // Restore teacher selection
+                if (data['teacher_id']) {
+                    const teacherSelect = document.querySelector('[name="teacher_id"]');
+                    if (teacherSelect) {
+                        teacherSelect.value = data['teacher_id'];
+                    }
+                }
+            }, 500);
+            
+            console.log('✓ Draft restored from:', savedDate.toLocaleString());
+        } catch (e) {
+            console.error('Failed to load form data:', e);
+        }
+    }
+    
+    // Debounced auto-save on input change
+    function scheduleAutosave() {
+        clearTimeout(autosaveTimeout);
+        autosaveTimeout = setTimeout(saveFormData, 1000); // Save 1 second after last change
+    }
+    
+    // Attach auto-save listeners
+    document.querySelectorAll('input[type="radio"], textarea, select').forEach(element => {
+        element.addEventListener('change', scheduleAutosave);
+        if (element.tagName === 'TEXTAREA') {
+            element.addEventListener('input', scheduleAutosave);
+        }
+    });
+    
+    // Clear saved data on successful submission
+    const originalSubmitHandler = form.onsubmit;
+    form.addEventListener('submit', function(e) {
+        // If form passes validation and user confirms, clear the draft
+        setTimeout(() => {
+            if (!e.defaultPrevented) {
+                localStorage.removeItem(formKey);
+                console.log('✓ Draft cleared after submission');
+            }
+        }, 100);
+    });
+    
+    // Load saved data on page load
+    loadFormData();
+    
+    // Show draft info if exists
+    const saved = localStorage.getItem(formKey);
+    if (saved) {
+        const { savedAt } = JSON.parse(saved);
+        console.log('💾 Draft available from:', new Date(savedAt).toLocaleString());
+    }
+    
+    // ===== KEYBOARD NAVIGATION =====
+    let focusedQuestionIndex = -1;
+    const allQuestions = [];
+    
+    // Group radio buttons by question
+    document.querySelectorAll('.question-radio').forEach(radio => {
+        const questionField = radio.dataset.question;
+        if (!allQuestions.find(q => q.field === questionField)) {
+            const radios = document.querySelectorAll(`input[data-question="${questionField}"]`);
+            allQuestions.push({
+                field: questionField,
+                radios: Array.from(radios)
+            });
+        }
+    });
+    
+    console.log('✓ Keyboard navigation enabled for', allQuestions.length, 'questions');
+    
+    // Add keyboard event listener
+    document.addEventListener('keydown', function(e) {
+        // Don't interfere if user is typing in a textarea
+        if (document.activeElement.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        // Arrow Up/Down - Navigate between questions
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            focusedQuestionIndex = Math.min(focusedQuestionIndex + 1, allQuestions.length - 1);
+            focusQuestion(focusedQuestionIndex);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            focusedQuestionIndex = Math.max(focusedQuestionIndex - 1, 0);
+            focusQuestion(focusedQuestionIndex);
+        }
+        // Arrow Left/Right - Select rating options
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            if (focusedQuestionIndex >= 0) {
+                e.preventDefault();
+                const question = allQuestions[focusedQuestionIndex];
+                const currentIndex = question.radios.findIndex(r => r.checked);
+                
+                let newIndex;
+                if (e.key === 'ArrowLeft') {
+                    newIndex = currentIndex > 0 ? currentIndex - 1 : 0;
+                } else {
+                    newIndex = currentIndex < question.radios.length - 1 ? currentIndex + 1 : question.radios.length - 1;
+                }
+                
+                question.radios[newIndex].checked = true;
+                question.radios[newIndex].dispatchEvent(new Event('change', { bubbles: true }));
+                
+                // Highlight the selected radio
+                highlightSelectedRadio(question.radios[newIndex]);
+            }
+        }
+        // Number keys 1-5 - Quick select ratings
+        else if (e.key >= '1' && e.key <= '5') {
+            if (focusedQuestionIndex >= 0) {
+                e.preventDefault();
+                const question = allQuestions[focusedQuestionIndex];
+                const index = parseInt(e.key) - 1;
+                
+                if (index < question.radios.length) {
+                    question.radios[index].checked = true;
+                    question.radios[index].dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    // Highlight the selected radio
+                    highlightSelectedRadio(question.radios[index]);
+                    
+                    // Auto-advance to next question
+                    if (focusedQuestionIndex < allQuestions.length - 1) {
+                        setTimeout(() => {
+                            focusedQuestionIndex++;
+                            focusQuestion(focusedQuestionIndex);
+                        }, 200);
+                    }
+                }
+            }
+        }
+        // Space or Enter - Confirm selection and move to next
+        else if ((e.key === ' ' || e.key === 'Enter') && focusedQuestionIndex >= 0) {
+            if (document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'BUTTON') {
+                e.preventDefault();
+                if (focusedQuestionIndex < allQuestions.length - 1) {
+                    focusedQuestionIndex++;
+                    focusQuestion(focusedQuestionIndex);
+                }
+            }
+        }
+    });
+    
+    // Focus on a specific question
+    function focusQuestion(index) {
+        if (index < 0 || index >= allQuestions.length) return;
+        
+        const question = allQuestions[index];
+        const firstRadio = question.radios[0];
+        
+        // Find the question row (flex container with question text and radios)
+        const questionRow = firstRadio.closest('.flex.flex-row');
+        const questionContainer = firstRadio.closest('.border-b');
+        
+        // Scroll to question
+        questionContainer.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+        });
+        
+        // Visual highlight - apply to the flex row, not the whole container
+        questionRow.style.backgroundColor = '#dbeafe';
+        questionRow.style.borderRadius = '0.5rem';
+        questionRow.style.padding = '0.75rem';
+        questionRow.style.marginLeft = '-0.75rem';
+        questionRow.style.marginRight = '-0.75rem';
+        questionRow.style.transition = 'all 0.3s ease';
+        questionRow.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.2)';
+        
+        // Remove highlight from other questions
+        document.querySelectorAll('.flex.flex-row').forEach(row => {
+            if (row !== questionRow && row.closest('.border-b')) {
+                row.style.backgroundColor = '';
+                row.style.borderRadius = '';
+                row.style.padding = '';
+                row.style.marginLeft = '';
+                row.style.marginRight = '';
+                row.style.boxShadow = '';
+            }
+        });
+        
+        console.log('→ Focused on question:', question.field, '(' + (index + 1) + '/' + allQuestions.length + ')');
+    }
+    
+    // Highlight selected radio temporarily
+    function highlightSelectedRadio(radio) {
+        const label = radio.closest('label');
+        label.style.transform = 'scale(1.3)';
+        label.style.transition = 'transform 0.2s';
+        
+        setTimeout(() => {
+            label.style.transform = 'scale(1)';
+        }, 200);
+    }
+    
+    // Click on any radio to focus that question
+    document.querySelectorAll('.question-radio').forEach(radio => {
+        radio.addEventListener('click', function() {
+            const questionField = this.dataset.question;
+            focusedQuestionIndex = allQuestions.findIndex(q => q.field === questionField);
+        });
+    });
+    
+    // Show keyboard shortcuts hint
+    console.log('⌨️ Keyboard Shortcuts:');
+    console.log('  ↑↓ - Navigate questions');
+    console.log('  ←→ - Change rating');
+    console.log('  1-5 - Quick select (Strongly Agree to Strongly Disagree)');
+    console.log('  Space/Enter - Confirm and move to next');
 });
 </script>
 
@@ -599,6 +1180,30 @@ document.addEventListener('DOMContentLoaded', function() {
     .md\:w-1\/2 {
         width: 100%;
     }
+}
+
+/* Shake animation for validation errors */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+/* Pulse animation for required field notice */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Enhanced border styles for required fields with errors */
+.border-red-500.\\!border-4 {
+    border-color: #ef4444 !important;
+    border-width: 4px !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 </style>
 

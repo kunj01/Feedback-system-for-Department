@@ -76,11 +76,7 @@
                             <h4 class="text-lg font-semibold text-gray-800">{{ $firstAssignment->form_title }}</h4>
                             
                             <!-- Status Badge -->
-                            @if($allCompleted)
-                                <span class="px-2 py-1 text-xs font-semibold rounded border bg-green-100 text-green-800 border-green-200">
-                                    Completed
-                                </span>
-                            @else
+                            @if(!$allCompleted)
                                 <span class="px-2 py-1 text-xs font-semibold rounded border bg-yellow-100 text-yellow-800 border-yellow-200">
                                     Pending
                                 </span>

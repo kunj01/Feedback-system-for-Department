@@ -51,9 +51,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
     // Profile & Settings
-    Route::get('/profile', function () {
-        return view('profile.index');
-    })->name('profile');
+    Route::get('/profile', [App\Http\Controllers\Web\ProfileController::class, 'index'])->name('profile');
+    Route::put('/profile/update-password', [App\Http\Controllers\Web\ProfileController::class, 'updatePassword'])->name('profile.update-password');
 
     Route::get('/settings', function () {
         return view('settings.index');
