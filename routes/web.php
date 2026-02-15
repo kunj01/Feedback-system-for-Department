@@ -24,6 +24,11 @@ use App\Http\Controllers\Admin\SubjectController as AdminSubjectController;
 use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\SpeakerFeedbackController;
+use App\Http\Controllers\Admin\TimetableController;
+use App\Http\Controllers\Admin\BatchController;
+use App\Http\Controllers\Admin\DivisionController;
+use App\Http\Controllers\Admin\StudentUploadController;
+use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 
 // Guest routes (authentication)
 Route::middleware('guest')->group(function () {
@@ -176,6 +181,11 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{teacher}', [AdminTeacherController::class, 'update'])->name('update');
         Route::delete('/{teacher}', [AdminTeacherController::class, 'destroy'])->name('destroy');
         Route::get('/active', [AdminTeacherController::class, 'getActive'])->name('active');
+        
+        // Batch assignments
+        Route::get('/{teacher}/batches', [AdminTeacherController::class, 'showBatchAssignments'])->name('batch-assignments');
+        Route::post('/{teacher}/batches/assign', [AdminTeacherController::class, 'assignBatches'])->name('assign-batches');
+        Route::post('/{teacher}/batches/unassign', [AdminTeacherController::class, 'unassignBatch'])->name('unassign-batch');
     });
 
     // Admin Settings Routes
@@ -271,6 +281,63 @@ Route::middleware(['auth'])->group(function () {
         // NAAC Analysis Report
         Route::get('/analysis/report', [AdminSpeakerController::class, 'generateAnalysisReport'])->name('analysis.report');
         Route::get('/analysis/export-pdf', [AdminSpeakerController::class, 'exportAnalysisReportPdf'])->name('analysis.export-pdf');
+    });
+
+    // Admin Timetable Management Routes
+    Route::prefix('admin/timetable')->name('admin.timetable.')->group(function () {
+        Route::get('/', [TimetableController::class, 'index'])->name('index');
+        Route::post('/', [TimetableController::class, 'store'])->name('store');
+        Route::put('/{timetable}', [TimetableController::class, 'update'])->name('update');
+        Route::delete('/{timetable}', [TimetableController::class, 'destroy'])->name('destroy');
+        Route::post('/generate-feedback', [TimetableController::class, 'generateFeedbackAllocations'])->name('generate-feedback');
+    });
+
+    // Admin Batch Management Routes
+    Route::prefix('admin/batches')->name('admin.batches.')->group(function () {
+        Route::get('/', [BatchController::class, 'index'])->name('index');
+        Route::post('/', [BatchController::class, 'store'])->name('store');
+        Route::put('/{batch}', [BatchController::class, 'update'])->name('update');
+        Route::delete('/{batch}', [BatchController::class, 'destroy'])->name('destroy');
+        Route::get('/division/{divisionId}', [BatchController::class, 'getBatchesByDivision'])->name('by-division');
+        Route::get('/batch/{batchId}/students', [BatchController::class, 'getStudentsByBatch'])->name('students');
+        Route::get('/division/{divisionId}/unassigned', [BatchController::class, 'getUnassignedStudents'])->name('unassigned');
+        Route::post('/assign', [BatchController::class, 'assignStudents'])->name('assign');
+        Route::post('/unassign', [BatchController::class, 'unassignStudents'])->name('unassign');
+    });
+
+    // Admin Division Management Routes
+    Route::prefix('admin/divisions')->name('admin.divisions.')->group(function () {
+        Route::get('/', [DivisionController::class, 'index'])->name('index');
+        Route::post('/', [DivisionController::class, 'store'])->name('store');
+        Route::put('/{division}', [DivisionController::class, 'update'])->name('update');
+        Route::delete('/{division}', [DivisionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Admin Student Upload Routes
+    Route::prefix('admin/students/upload')->name('admin.students.upload.')->group(function () {
+        Route::get('/', [StudentUploadController::class, 'index'])->name('index');
+        Route::post('/', [StudentUploadController::class, 'upload'])->name('process');
+        Route::get('/template', [StudentUploadController::class, 'downloadTemplate'])->name('template');
+        Route::post('/bulk-delete', [StudentUploadController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+
+    // Student Dashboard Routes
+    Route::prefix('student')->name('student.')->middleware(['auth'])->group(function () {
+        Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/timetable', [StudentDashboardController::class, 'timetable'])->name('timetable');
+        
+        // Student Feedback Routes (already exist under feedback prefix)
+        Route::prefix('feedback')->name('feedback.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Student\FeedbackController::class, 'index'])->name('index');
+        });
+    });
+
+    // API Routes for AJAX calls
+    Route::prefix('api')->name('api.')->group(function () {
+        Route::get('/divisions', [DivisionController::class, 'getByFilters'])->name('divisions');
+        Route::get('/timetable/subjects', [TimetableController::class, 'getSubjects'])->name('timetable.subjects');
+        Route::get('/timetable/faculties', [TimetableController::class, 'getFaculties'])->name('timetable.faculties');
+        Route::get('/timetable/batches/{divisionId}', [TimetableController::class, 'getBatches'])->name('timetable.batches');
     });
 });
 

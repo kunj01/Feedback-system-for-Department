@@ -93,7 +93,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200">
                 <h4 class="font-semibold text-blue-900 mb-3">Overall Average Rating</h4>
-                <div class="text-4xl font-bold text-blue-600">{{ $analysis['overall_average'] }}<span class="text-2xl">/5.0</span></div>
+                <div class="text-4xl font-bold text-blue-600">{{ number_format(($analysis['overall_average'] / 5) * 100, 1) }}<span class="text-2xl">%</span></div>
                 <div class="mt-2 text-sm text-blue-700">
                     Based on {{ $analysis['total_responses'] }} responses
                 </div>
@@ -147,7 +147,7 @@
                                     @elseif($teacher['average_rating'] >= 3.0) bg-yellow-100 text-yellow-800
                                     @else bg-red-100 text-red-800
                                     @endif">
-                                    {{ $teacher['average_rating'] }}/5.0
+                                    {{ number_format(($teacher['average_rating'] / 5) * 100, 1) }}%
                                 </span>
                             </td>
                         </tr>
@@ -173,19 +173,19 @@
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    Strengths (≥4.5)
+                    Strengths (≥90%)
                 </h4>
                 @if(!empty($analysis['strengths_weaknesses']['strengths']))
                     <ul class="space-y-2">
                         @foreach($analysis['strengths_weaknesses']['strengths'] as $strength)
                             <li class="text-sm text-gray-700 flex items-start">
                                 <span class="inline-block w-2 h-2 bg-green-600 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                                <span>{{ $strength['question'] }} ({{ $strength['average'] }}/5.0)</span>
+                                <span>{{ $strength['question'] }} ({{ number_format(($strength['average'] / 5) * 100, 1) }}%)</span>
                             </li>
                         @endforeach
                     </ul>
                 @else
-                    <p class="text-sm text-gray-600 italic">No parameters scored above 4.5</p>
+                    <p class="text-sm text-gray-600 italic">No parameters scored above 90%</p>
                 @endif
             </div>
 
@@ -195,19 +195,19 @@
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
-                    Areas for Improvement (<3.5)
+                    Areas for Improvement (<70%)
                 </h4>
                 @if(!empty($analysis['strengths_weaknesses']['weaknesses']))
                     <ul class="space-y-2">
                         @foreach($analysis['strengths_weaknesses']['weaknesses'] as $weakness)
                             <li class="text-sm text-gray-700 flex items-start">
                                 <span class="inline-block w-2 h-2 bg-orange-600 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                                <span>{{ $weakness['question'] }} ({{ $weakness['average'] }}/5.0)</span>
+                                <span>{{ $weakness['question'] }} ({{ number_format(($weakness['average'] / 5) * 100, 1) }}%)</span>
                             </li>
                         @endforeach
                     </ul>
                 @else
-                    <p class="text-sm text-gray-600 italic">No parameters scored below 3.5</p>
+                    <p class="text-sm text-gray-600 italic">No parameters scored below 70%</p>
                 @endif
             </div>
         </div>

@@ -54,10 +54,176 @@
         </div>
     </div>
 
+    <!-- New Batch-wise Assignment Section -->
+    <div class="card mb-6 border-2 border-green-200 shadow-lg">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Batch-wise Assignment (Recommended)
+                </h3>
+                <p class="text-sm text-gray-600 mt-1">Assign feedback forms based on teacher-batch assignments. Select students by batch, then select their teachers.</p>
+            </div>
+            <button type="button" onclick="toggleBatchWiseSection()" class="text-green-600 hover:text-green-800 transition-colors">
+                <svg id="batchWiseDropdownIcon" class="w-7 h-7 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="batchWiseSection" class="hidden">
+            <form action="{{ route('forms.assign', $formName) }}" method="POST" id="batchWiseAssignForm">
+                @csrf
+                <input type="hidden" name="batch_wise_mode" value="1">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left: Student Selection -->
+                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 class="text-md font-bold text-gray-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            Step 1: Select Students
+                        </h4>
+                        
+                        <!-- Filter Section -->
+                        <div class="mb-3 p-3 bg-white border border-blue-300 rounded-lg">
+                            <h5 class="text-xs font-bold text-gray-700 mb-2">Filter Students</h5>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Semester</label>
+                                    <select id="batchWiseSemesterFilter" onchange="updateBatchWiseDivisionFilter(); filterBatchWiseStudents();" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+                                        <option value="">All Semesters</option>
+                                        <option value="4">Semester 4</option>
+                                        <option value="6">Semester 6</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Division</label>
+                                    <select id="batchWiseDivisionFilter" onchange="updateBatchWiseBatchFilter(); filterBatchWiseStudents(); updateTeacherListForStudents();" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+                                        <option value="">All Divisions</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Batch</label>
+                                <select id="batchWiseBatchFilter" onchange="filterBatchWiseStudents(); updateTeacherListForStudents();" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="">All Batches</option>
+                                </select>
+                            </div>
+                            <div id="batchWiseFilterSummary" class="mt-2 text-xs text-blue-700 font-medium hidden">
+                                <span id="batchWiseFilteredCount">0</span> students found
+                            </div>
+                        </div>
+                        
+                        <!-- Student List -->
+                        <div class="mb-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-medium text-gray-700">Select Students</label>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="toggleBatchWiseStudentList()" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors flex items-center gap-1">
+                                        <svg id="batchWiseStudentListIcon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                        <span id="batchWiseStudentListText">Show List</span>
+                                    </button>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" id="select-all-batchwise-students" class="form-checkbox h-3 w-3 text-blue-600 mr-1">
+                                        <span class="text-xs font-medium text-blue-600">Select All</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="batchWiseStudentList" class="hidden space-y-1 max-h-80 overflow-y-auto border rounded-lg p-2 bg-white">
+                                @foreach($students as $student)
+                                    @php
+                                        $isAssigned = $assignments->where('student_id', $student->id)->isNotEmpty();
+                                        $divisionName = $student->division ? $student->division->name : 'Unknown';
+                                        $batchName = $student->batchGroup ? $student->batchGroup->batch_name : '';
+                                    @endphp
+                                    <label class="batchwise-student-item flex items-center p-2 hover:bg-blue-50 rounded transition-colors {{ $isAssigned ? 'bg-green-50' : '' }}"
+                                           data-semester="{{ $student->semester }}"
+                                           data-division="{{ $divisionName }}"
+                                           data-batch="{{ $batchName }}"
+                                           data-batch-id="{{ $student->batch_id }}"
+                                           data-student-id="{{ $student->id }}">
+                                        <input type="checkbox" name="batch_wise_student_ids[]" value="{{ $student->id }}"
+                                               {{ $isAssigned ? 'disabled checked' : '' }}
+                                               onchange="updateTeacherListForStudents()"
+                                               class="form-checkbox h-3 w-3 text-blue-600 batchwise-student-checkbox">
+                                        <div class="ml-2 flex-1 min-w-0">
+                                            <div class="flex items-center gap-1">
+                                                <p class="text-xs font-medium text-gray-900 truncate">{{ $student->user->name }}</p>
+                                                <span class="text-xs px-1 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">{{ $divisionName }}</span>
+                                                @if($batchName)
+                                                    <span class="text-xs px-1 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">{{ $batchName }}</span>
+                                                @endif
+                                            </div>
+                                            <p class="text-xs text-gray-500">{{ $student->enrollment_no ?? $student->student_id }}</p>
+                                        </div>
+                                        @if($isAssigned)
+                                            <span class="ml-2 text-xs font-medium text-green-600">✓</span>
+                                        @endif
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Teacher Selection -->
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 class="text-md font-bold text-gray-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            Step 2: Select Teachers
+                        </h4>
+                        
+                        <div id="batchWiseTeacherInfo" class="mb-3 p-2 bg-white border border-green-300 rounded text-xs text-gray-600">
+                            <p>Select students first. Teachers who teach the selected students' batches will appear here.</p>
+                        </div>
+                        
+                        <!-- Teacher List -->
+                        <div class="mb-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-medium text-gray-700">Available Teachers</label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" id="select-all-batchwise-teachers" class="form-checkbox h-3 w-3 text-green-600 mr-1">
+                                    <span class="text-xs font-medium text-green-600">Select All</span>
+                                </label>
+                            </div>
+                            <div id="batchWiseTeacherList" class="space-y-2 max-h-80 overflow-y-auto border rounded-lg p-2 bg-white">
+                                <p class="text-center text-xs text-gray-400 py-8">No students selected yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-700">
+                            <p class="font-medium">Ready to assign?</p>
+                            <p class="text-xs text-gray-600 mt-1">Students will receive feedback forms for their selected teachers and subjects.</p>
+                        </div>
+                        <button type="submit" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-lg transition-colors flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Assign Forms
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Assign to Students -->
-        <div class="card">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Assign to Students</h3>
+        <!-- Assign to Students (Original Method) -->
+        <div class="card border-2 border-gray-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Manual Assignment</h3>
+            <p class="text-xs text-gray-600 mb-4">Assign to specific students without batch-teacher matching.</p>
             <form action="{{ route('forms.assign', $formName) }}" method="POST" id="assignForm">
                 @csrf
                 
@@ -116,35 +282,102 @@
                     </div>
                 </div>
                 
+                <!-- Filter Section -->
+                <div class="mb-4 p-3 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                    <h4 class="text-xs font-bold text-gray-700 mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-1.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                        </svg>
+                        Filter Students
+                    </h4>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <!-- Semester Filter -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Semester</label>
+                            <select id="semesterFilter" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                <option value="">All Semesters</option>
+                                <option value="4">Semester 4</option>
+                                <option value="6">Semester 6</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Division Filter -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Division</label>
+                            <select id="divisionFilter" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                <option value="">All Divisions</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Batch Multi-Select -->
+                    <div class="mt-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Batches</label>
+                        <div id="batchFilterContainer" class="bg-white border border-gray-300 rounded-lg p-2 max-h-24 overflow-y-auto">
+                            <p class="text-xs text-gray-400 italic">Select semester and division first</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Summary -->
+                    <div id="filterSummary" class="mt-2 text-xs text-blue-700 font-medium hidden">
+                        <span id="filteredCount">0</span> students found
+                    </div>
+                </div>
+                
                 <div class="mb-4">
                     <div class="flex items-center justify-between mb-2">
-                        <label class="block text-sm font-medium text-gray-700">Select Students</label>
-                        <label class="flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                id="select-all-students" 
-                                class="form-checkbox h-5 w-5 text-blue-600 mr-2">
-                            <span class="text-sm font-medium text-blue-600">Select All</span>
-                        </label>
+                        <label class="block text-xs font-medium text-gray-700">Select Students</label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="toggleManualStudentList()" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors flex items-center gap-1">
+                                <svg id="manualStudentListIcon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                                <span id="manualStudentListText">Show List</span>
+                            </button>
+                            <label class="flex items-center cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    id="select-all-students" 
+                                    class="form-checkbox h-4 w-4 text-blue-600 mr-1.5">
+                                <span class="text-xs font-medium text-blue-600">Select All Visible</span>
+                            </label>
+                        </div>
                     </div>
-                    <div class="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-4">
+                    <div id="studentListContainer" class="hidden space-y-1.5 max-h-80 overflow-y-auto border rounded-lg p-3 bg-gray-50">
                         @foreach($students as $student)
                             @php
                                 $isAssigned = $assignments->where('student_id', $student->id)->isNotEmpty();
+                                $divisionName = $student->division ? $student->division->name : 'Unknown';
+                                $batchName = $student->batchGroup ? $student->batchGroup->batch_name : '';
                             @endphp
-                            <label class="flex items-center p-2 hover:bg-gray-50 rounded {{ $isAssigned ? 'bg-green-50' : '' }}">
+                            <label class="student-item flex items-center p-2 hover:bg-white rounded transition-colors {{ $isAssigned ? 'bg-green-50' : 'bg-white' }}"
+                                   data-semester="{{ $student->semester }}"
+                                   data-division="{{ $divisionName }}"
+                                   data-batch="{{ $batchName }}"
+                                   data-student-id="{{ $student->id }}">
                                 <input 
                                     type="checkbox" 
                                     name="student_ids[]" 
                                     value="{{ $student->id }}"
                                     {{ $isAssigned ? 'disabled checked' : '' }}
-                                    class="form-checkbox h-5 w-5 text-blue-600">
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-gray-900">{{ $student->user->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ $student->user->email }} - {{ $student->student_id }}</p>
+                                    class="form-checkbox h-4 w-4 text-blue-600 student-checkbox">
+                                <div class="ml-2 flex-1 min-w-0">
+                                    <div class="flex items-center gap-1.5">
+                                        <p class="text-xs font-medium text-gray-900 truncate">{{ $student->user->name }}</p>
+                                        <span class="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-semibold">
+                                            {{ $divisionName }}
+                                        </span>
+                                        @if($batchName)
+                                            <span class="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">
+                                                {{ $batchName }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="text-xs text-gray-500 truncate">{{ $student->enrollment_no ?? $student->student_id }}</p>
                                 </div>
                                 @if($isAssigned)
-                                    <span class="ml-auto text-xs font-semibold text-green-600">Already Assigned</span>
+                                    <span class="ml-2 text-xs font-semibold text-green-600 whitespace-nowrap">✓ Assigned</span>
                                 @endif
                             </label>
                         @endforeach
@@ -326,6 +559,148 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Teacher-Batch Assignments Reference -->
+            <div class="card overflow-hidden border-2 border-purple-200 shadow-md mt-6">
+                <div class="w-full p-5 bg-gradient-to-br from-purple-50 to-indigo-100 border-b border-purple-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center flex-1">
+                            <svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            <div class="text-left">
+                                <h4 class="text-base font-bold text-gray-700">Teachers with Batch Assignments</h4>
+                                <p class="text-xs text-gray-600">Quick reference for teachers and their assigned batches</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleTeacherBatchSection()" class="text-purple-600 hover:text-purple-800 transition-colors">
+                            <svg id="teacherDropdownIcon" class="w-6 h-6 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="teacherBatchSection" class="hidden">
+                    <div class="p-4 border-t border-gray-200">
+                        <!-- Filter Section -->
+                        <div class="mb-4 p-3 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg">
+                            <h5 class="text-xs font-bold text-gray-700 mb-3 flex items-center">
+                                <svg class="w-4 h-4 mr-1.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                                </svg>
+                                Filter Teachers
+                            </h5>
+                            
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Semester</label>
+                                    <select id="teacherSemesterFilter" onchange="filterTeacherList()" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white">
+                                        <option value="">All Semesters</option>
+                                        <option value="4">Semester 4</option>
+                                        <option value="6">Semester 6</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Division</label>
+                                    <select id="teacherDivisionFilter" onchange="filterTeacherList()" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white">
+                                        <option value="">All Divisions</option>
+                                        <option value="4-IT-1">4-IT-1</option>
+                                        <option value="4-IT-2">4-IT-2</option>
+                                        <option value="6-IT-1">6-IT-1</option>
+                                        <option value="6-IT-2">6-IT-2</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Teachers List -->
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            @if(isset($teachers) && $teachers->count() > 0)
+                                @foreach($teachers as $teacher)
+                                    <div class="teacher-item border border-gray-200 rounded-lg p-3 bg-white hover:shadow-md transition-shadow" 
+                                         data-teacher-semesters="{{ $teacher->batchesBySemester->keys()->implode(',') }}"
+                                         data-teacher-divisions="{{ $teacher->batches->pluck('division.name')->unique()->implode(',') }}">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center mb-2">
+                                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center mr-2">
+                                                        <span class="text-sm font-bold text-purple-600">{{ substr($teacher->name, 0, 1) }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-sm font-semibold text-gray-900">{{ $teacher->name }}</p>
+                                                        <p class="text-xs text-gray-600">{{ $teacher->email }}</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Batches by Semester -->
+                                                <div class="ml-10 space-y-2">
+                                                    @foreach($teacher->batchesBySemester as $semester => $batches)
+                                                        <div class="semester-group" data-semester="{{ $semester }}">
+                                                            <p class="text-xs font-bold text-purple-700 mb-1">Semester {{ $semester }}</p>
+                                                            <div class="flex flex-wrap gap-1">
+                                                                @foreach($batches as $batch)
+                                                                    @php
+                                                                        $pivotData = $batch->pivot;
+                                                                        $subject = $subjects->firstWhere('id', $pivotData->subject_id);
+                                                                    @endphp
+                                                                    <div class="batch-item inline-flex items-center px-2 py-1 bg-purple-50 border border-purple-200 rounded text-xs" 
+                                                                         data-division="{{ $batch->division->name }}"
+                                                                         title="{{ $subject ? $subject->name : 'No subject' }} - {{ $pivotData->type }}{{ $pivotData->notes ? ' - ' . $pivotData->notes : '' }}">
+                                                                        <span class="font-semibold text-purple-900">{{ $batch->division->name }}</span>
+                                                                        <span class="mx-1 text-purple-400">•</span>
+                                                                        <span class="text-purple-700">{{ $batch->batch_name }}</span>
+                                                                        @if($pivotData->type === 'lab')
+                                                                            <span class="ml-1 px-1 bg-green-200 text-green-800 rounded text-xs">Lab</span>
+                                                                        @else
+                                                                            <span class="ml-1 px-1 bg-blue-200 text-blue-800 rounded text-xs">Theory</span>
+                                                                        @endif
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="ml-3 flex gap-2">
+                                                <button type="button"
+                                                        onclick="openTeacherAssignModal({{ $teacher->id }}, '{{ addslashes($teacher->name) }}', '{{ addslashes($teacher->email) }}')"
+                                                        class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded transition-colors flex items-center gap-1">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                                    </svg>
+                                                    Assign
+                                                </button>
+                                                <a href="{{ route('admin.teachers.batch-assignments', $teacher) }}" 
+                                                   target="_blank"
+                                                   class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded transition-colors flex items-center gap-1">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                                    </svg>
+                                                    View
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="text-center py-12 text-gray-500">
+                                    <svg class="w-16 h-16 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                    </svg>
+                                    <p class="font-medium">No teachers with batch assignments</p>
+                                    <p class="text-sm mt-1">Assign batches to teachers from the Teachers module</p>
+                                    <a href="{{ route('admin.teachers.index') }}" class="inline-block mt-3 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition">
+                                        Go to Teachers
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -394,6 +769,125 @@
                 @endforelse
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Teacher Assign Modal -->
+<div id="teacherAssignModal" class="hidden fixed inset-0 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4 transition-all duration-300 backdrop-blur-lg" style="background: rgba(0, 0, 0, 0.5);" onclick="if(event.target === this) closeTeacherAssignModal()">
+    <div class="relative p-6 border w-full max-w-5xl shadow-2xl rounded-xl bg-white transform transition-all duration-300" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-4 pb-3 border-b">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mr-3">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900">Assign to Teacher's Students</h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                        <span id="modalTeacherName" class="font-semibold"></span> • 
+                        <span id="modalTeacherEmail" class="text-gray-500"></span>
+                    </p>
+                </div>
+            </div>
+            <button onclick="closeTeacherAssignModal()" class="text-gray-400 hover:text-gray-600 transition-colors hover:rotate-90 hover:scale-110">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form id="teacherAssignForm" action="{{ route('forms.assign', $formName) }}" method="POST">
+            @csrf
+            <input type="hidden" name="teacher_assign_mode" value="1">
+            <input type="hidden" name="teacher_assign_teacher_id" id="teacherAssignTeacherId">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+                <!-- Teacher's Batches Info -->
+                <div class="lg:col-span-1 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-bold text-gray-800 flex items-center">
+                            <svg class="w-4 h-4 mr-1.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            Teacher's Batches
+                        </h4>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="select-all-teacher-batches" onclick="toggleAllTeacherBatches(this.checked)" class="form-checkbox h-3 w-3 text-purple-600 mr-1" checked>
+                            <span class="text-xs font-medium text-purple-600">All</span>
+                        </label>
+                    </div>
+                    <div id="modalTeacherBatches" class="space-y-2 text-xs">
+                        <!-- Batches will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Student Selection -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-md font-bold text-gray-800 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            Select Students
+                        </h4>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="select-all-teacher-students" class="form-checkbox h-4 w-4 text-blue-600 mr-2">
+                            <span class="text-sm font-medium text-blue-600">Select All</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Filter Section -->
+                    <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h5 class="text-xs font-bold text-gray-700 mb-2">Filter Students</h5>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Semester</label>
+                                <select id="modalSemesterFilter" onchange="filterModalStudents()" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-white">
+                                    <option value="">All</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Division</label>
+                                <select id="modalDivisionFilter" onchange="filterModalStudents()" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-white">
+                                    <option value="">All</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Batch</label>
+                                <select id="modalBatchFilter" onchange="filterModalStudents()" class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-white">
+                                    <option value="">All</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="modalFilterSummary" class="mt-2 text-xs text-blue-700 font-medium hidden">
+                            <span id="modalFilteredCount">0</span> students found
+                        </div>
+                    </div>
+                    
+                    <!-- Student List -->
+                    <div id="modalStudentList" class="space-y-1.5 max-h-96 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+                        <!-- Students will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Submit Section -->
+            <div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Assign feedback form to selected students</p>
+                    <p class="text-xs text-gray-600 mt-1">Students will give feedback to <span id="modalTeacherNameSubmit" class="font-semibold"></span> for their subjects</p>
+                </div>
+                <button type="submit" class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-xl transition-colors flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Assign Forms
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -493,6 +987,93 @@ function toggleMultiTeacherSection() {
         section.classList.add('hidden');
         icon.classList.remove('rotate-180');
     }
+}
+
+function toggleTeacherBatchSection() {
+    const section = document.getElementById('teacherBatchSection');
+    const icon = document.getElementById('teacherDropdownIcon');
+    
+    if (section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+    } else {
+        section.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+    }
+}
+
+function filterTeacherList() {
+    const semesterFilter = document.getElementById('teacherSemesterFilter').value;
+    const divisionFilter = document.getElementById('teacherDivisionFilter').value;
+    
+    const teacherItems = document.querySelectorAll('.teacher-item');
+    
+    teacherItems.forEach(item => {
+        const teacherSemesters = item.dataset.teacherSemesters.split(',');
+        const teacherDivisions = item.dataset.teacherDivisions.split(',');
+        
+        let showTeacher = true;
+        
+        // Filter by semester
+        if (semesterFilter && !teacherSemesters.includes(semesterFilter)) {
+            showTeacher = false;
+        }
+        
+        // Filter by division
+        if (divisionFilter && !teacherDivisions.includes(divisionFilter)) {
+            showTeacher = false;
+        }
+        
+        // Show/hide the teacher item
+        if (showTeacher) {
+            item.style.display = '';
+            
+            // Within the shown teacher, filter semester groups and batch items
+            if (semesterFilter || divisionFilter) {
+                const semesterGroups = item.querySelectorAll('.semester-group');
+                semesterGroups.forEach(group => {
+                    const groupSemester = group.dataset.semester;
+                    
+                    if (semesterFilter && groupSemester !== semesterFilter) {
+                        group.style.display = 'none';
+                    } else {
+                        group.style.display = '';
+                        
+                        // Filter batch items within the group
+                        if (divisionFilter) {
+                            const batchItems = group.querySelectorAll('.batch-item');
+                            batchItems.forEach(batch => {
+                                const batchDivision = batch.dataset.division;
+                                if (batchDivision === divisionFilter) {
+                                    batch.style.display = '';
+                                } else {
+                                    batch.style.display = 'none';
+                                }
+                            });
+                        } else {
+                            // Show all batch items if no division filter
+                            const batchItems = group.querySelectorAll('.batch-item');
+                            batchItems.forEach(batch => {
+                                batch.style.display = '';
+                            });
+                        }
+                    }
+                });
+            } else {
+                // No filters, show everything
+                const semesterGroups = item.querySelectorAll('.semester-group');
+                semesterGroups.forEach(group => {
+                    group.style.display = '';
+                    const batchItems = group.querySelectorAll('.batch-item');
+                    batchItems.forEach(batch => {
+                        batch.style.display = '';
+                    });
+                });
+            }
+        } else {
+            item.style.display = 'none';
+        }
+    });
 }
 
 function toggleMultiTeacherToggle() {
@@ -679,29 +1260,760 @@ function saveMultiTeacherConfig() {
     });
 }
 
-// Select All Students functionality
+// Student Filter Functionality
 document.addEventListener('DOMContentLoaded', function() {
+    const semesterFilter = document.getElementById('semesterFilter');
+    const divisionFilter = document.getElementById('divisionFilter');
+    const batchFilterContainer = document.getElementById('batchFilterContainer');
+    const filterSummary = document.getElementById('filterSummary');
+    const filteredCount = document.getElementById('filteredCount');
     const selectAllCheckbox = document.getElementById('select-all-students');
-    const studentCheckboxes = document.querySelectorAll('input[name="student_ids[]"]:not([disabled])');
+    const studentItems = document.querySelectorAll('.student-item');
     
+    let selectedBatches = new Set();
+    
+    // Extract unique divisions and batches from students
+    const divisionsData = {};
+    studentItems.forEach(item => {
+        const semester = item.dataset.semester;
+        const division = item.dataset.division;
+        const batch = item.dataset.batch;
+        
+        if (!divisionsData[semester]) {
+            divisionsData[semester] = {};
+        }
+        if (!divisionsData[semester][division]) {
+            divisionsData[semester][division] = new Set();
+        }
+        if (batch) {
+            divisionsData[semester][division].add(batch);
+        }
+    });
+    
+    // Semester change handler
+    semesterFilter.addEventListener('change', function() {
+        const selectedSemester = this.value;
+        
+        // Update divisions dropdown
+        divisionFilter.innerHTML = '<option value="">All Divisions</option>';
+        
+        if (selectedSemester && divisionsData[selectedSemester]) {
+            Object.keys(divisionsData[selectedSemester]).sort().forEach(division => {
+                const option = document.createElement('option');
+                option.value = division;
+                option.textContent = division;
+                divisionFilter.appendChild(option);
+            });
+        }
+        
+        // Reset batches
+        batchFilterContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Select division to see batches</p>';
+        selectedBatches.clear();
+        
+        filterStudents();
+    });
+    
+    // Division change handler
+    divisionFilter.addEventListener('change', function() {
+        const selectedSemester = semesterFilter.value;
+        const selectedDivision = this.value;
+        
+        // Update batches
+        batchFilterContainer.innerHTML = '';
+        selectedBatches.clear();
+        
+        if (selectedSemester && selectedDivision && divisionsData[selectedSemester]?.[selectedDivision]) {
+            const batches = Array.from(divisionsData[selectedSemester][selectedDivision]).sort();
+            
+            if (batches.length > 0) {
+                batches.forEach(batch => {
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center gap-1.5 px-2 py-1 hover:bg-blue-50 rounded cursor-pointer transition-colors';
+                    label.innerHTML = `
+                        <input type="checkbox" value="${batch}" class="batch-checkbox form-checkbox h-3 w-3 text-blue-600">
+                        <span class="text-xs font-medium text-gray-700">${batch}</span>
+                    `;
+                    batchFilterContainer.appendChild(label);
+                });
+                
+                // Add batch checkbox listeners
+                document.querySelectorAll('.batch-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            selectedBatches.add(this.value);
+                        } else {
+                            selectedBatches.delete(this.value);
+                        }
+                        filterStudents();
+                    });
+                });
+            } else {
+                batchFilterContainer.innerHTML = '<p class="text-xs text-gray-400 italic">No batches available</p>';
+            }
+        } else {
+            batchFilterContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Select division to see batches</p>';
+        }
+        
+        filterStudents();
+    });
+    
+    // Filter students based on selected criteria
+    function filterStudents() {
+        const selectedSemester = semesterFilter.value;
+        const selectedDivision = divisionFilter.value;
+        let visibleCount = 0;
+        
+        studentItems.forEach(item => {
+            const itemSemester = item.dataset.semester;
+            const itemDivision = item.dataset.division;
+            const itemBatch = item.dataset.batch;
+            
+            let shouldShow = true;
+            
+            // Filter by semester
+            if (selectedSemester && itemSemester !== selectedSemester) {
+                shouldShow = false;
+            }
+            
+            // Filter by division
+            if (selectedDivision && itemDivision !== selectedDivision) {
+                shouldShow = false;
+            }
+            
+            // Filter by batches (if any selected)
+            if (selectedBatches.size > 0) {
+                if (!itemBatch || !selectedBatches.has(itemBatch)) {
+                    shouldShow = false;
+                }
+            }
+            
+            // Show/hide item
+            if (shouldShow) {
+                item.style.display = '';
+                const checkbox = item.querySelector('.student-checkbox');
+                if (checkbox && !checkbox.disabled) {
+                    visibleCount++;
+                }
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Update filter summary
+        filteredCount.textContent = visibleCount;
+        filterSummary.classList.toggle('hidden', visibleCount === 0 && !selectedSemester && !selectedDivision);
+        
+        // Update select all checkbox
+        updateSelectAllCheckbox();
+    }
+    
+    // Select All functionality
     if (selectAllCheckbox) {
-        // Handle Select All checkbox click
         selectAllCheckbox.addEventListener('change', function() {
-            studentCheckboxes.forEach(checkbox => {
+            const visibleCheckboxes = getVisibleCheckboxes();
+            visibleCheckboxes.forEach(checkbox => {
                 checkbox.checked = this.checked;
             });
         });
+    }
+    
+    // Get visible non-disabled checkboxes
+    function getVisibleCheckboxes() {
+        return Array.from(document.querySelectorAll('.student-checkbox:not([disabled])'))
+            .filter(cb => cb.closest('.student-item').style.display !== 'none');
+    }
+    
+    // Update Select All checkbox state
+    function updateSelectAllCheckbox() {
+        if (!selectAllCheckbox) return;
         
-        // Update Select All checkbox based on individual checkboxes
-        studentCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const allChecked = Array.from(studentCheckboxes).every(cb => cb.checked);
-                const anyChecked = Array.from(studentCheckboxes).some(cb => cb.checked);
-                
-                selectAllCheckbox.checked = allChecked;
-                selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+        const visibleCheckboxes = getVisibleCheckboxes();
+        if (visibleCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+            return;
+        }
+        
+        const allChecked = visibleCheckboxes.every(cb => cb.checked);
+        const anyChecked = visibleCheckboxes.some(cb => cb.checked);
+        
+        selectAllCheckbox.checked = allChecked;
+        selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+    }
+    
+    // Update select all on individual checkbox change
+    document.querySelectorAll('.student-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectAllCheckbox);
+    });
+    
+    // Initial filter
+    filterStudents();
+});
+
+// ===== BATCH-WISE ASSIGNMENT FUNCTIONS =====
+
+function toggleBatchWiseSection() {
+    const section = document.getElementById('batchWiseSection');
+    const icon = document.getElementById('batchWiseDropdownIcon');
+    
+    if (section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+    } else {
+        section.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+    }
+}
+
+// Toggle Batch-wise Student List
+function toggleBatchWiseStudentList() {
+    const list = document.getElementById('batchWiseStudentList');
+    const icon = document.getElementById('batchWiseStudentListIcon');
+    const text = document.getElementById('batchWiseStudentListText');
+    
+    if (list.classList.contains('hidden')) {
+        list.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+        text.textContent = 'Hide List';
+    } else {
+        list.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+        text.textContent = 'Show List';
+    }
+}
+
+// Toggle Manual Assignment Student List
+function toggleManualStudentList() {
+    const list = document.getElementById('studentListContainer');
+    const icon = document.getElementById('manualStudentListIcon');
+    const text = document.getElementById('manualStudentListText');
+    
+    if (list.classList.contains('hidden')) {
+        list.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+        text.textContent = 'Hide List';
+    } else {
+        list.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+        text.textContent = 'Show List';
+    }
+}
+
+// Teacher batch data from PHP
+const teacherBatchData = {!! json_encode($teachers->map(function($teacher) use ($subjects) {
+    return [
+        'id' => $teacher->id,
+        'name' => $teacher->name,
+        'email' => $teacher->email,
+        'batches' => $teacher->batches->map(function($batch) use ($subjects) {
+            $subject = $subjects->firstWhere('id', $batch->pivot->subject_id);
+            return [
+                'id' => $batch->id,
+                'name' => $batch->batch_name,
+                'division' => $batch->division->name,
+                'semester' => $batch->division->semester,
+                'subject_id' => $batch->pivot->subject_id,
+                'subject_name' => $subject ? $subject->name : 'N/A',
+                'type' => $batch->pivot->type,
+                'notes' => $batch->pivot->notes,
+                'pivot_id' => $batch->pivot->id
+            ];
+        })
+    ];
+})->values()) !!};
+
+// Update division filter for batch-wise section
+function updateBatchWiseDivisionFilter() {
+    const semester = document.getElementById('batchWiseSemesterFilter').value;
+    const divisionSelect = document.getElementById('batchWiseDivisionFilter');
+    
+    // Clear current options except "All Divisions"
+    divisionSelect.innerHTML = '<option value="">All Divisions</option>';
+    
+    // Get unique divisions from students
+    const divisions = new Set();
+    document.querySelectorAll('.batchwise-student-item').forEach(item => {
+        const itemSemester = item.dataset.semester;
+        const division = item.dataset.division;
+        
+        if (!semester || semester === itemSemester) {
+            divisions.add(division);
+        }
+    });
+    
+    // Add division options
+    Array.from(divisions).sort().forEach(division => {
+        const option = document.createElement('option');
+        option.value = division;
+        option.textContent = division;
+        divisionSelect.appendChild(option);
+    });
+}
+
+// Update batch filter for batch-wise section
+function updateBatchWiseBatchFilter() {
+    const semester = document.getElementById('batchWiseSemesterFilter').value;
+    const division = document.getElementById('batchWiseDivisionFilter').value;
+    const batchSelect = document.getElementById('batchWiseBatchFilter');
+    
+    // Clear current options except "All Batches"
+    batchSelect.innerHTML = '<option value="">All Batches</option>';
+    
+    // Get unique batches from students
+    const batches = new Set();
+    document.querySelectorAll('.batchwise-student-item').forEach(item => {
+        const itemSemester = item.dataset.semester;
+        const itemDivision = item.dataset.division;
+        const batch = item.dataset.batch;
+        
+        if ((!semester || semester === itemSemester) && 
+            (!division || division === itemDivision) && 
+            batch) {
+            batches.add(batch);
+        }
+    });
+    
+    // Add batch options
+    Array.from(batches).sort().forEach(batch => {
+        const option = document.createElement('option');
+        option.value = batch;
+        option.textContent = batch;
+        batchSelect.appendChild(option);
+    });
+}
+
+// Filter students in batch-wise section
+function filterBatchWiseStudents() {
+    const semester = document.getElementById('batchWiseSemesterFilter').value;
+    const division = document.getElementById('batchWiseDivisionFilter').value;
+    const batch = document.getElementById('batchWiseBatchFilter').value;
+    
+    let visibleCount = 0;
+    
+    document.querySelectorAll('.batchwise-student-item').forEach(item => {
+        const itemSemester = item.dataset.semester;
+        const itemDivision = item.dataset.division;
+        const itemBatch = item.dataset.batch;
+        const checkbox = item.querySelector('.batchwise-student-checkbox');
+        
+        let show = true;
+        
+        if (semester && semester !== itemSemester) show = false;
+        if (division && division !== itemDivision) show = false;
+        if (batch && batch !== itemBatch) show = false;
+        
+        if (show && !checkbox.disabled) {
+            item.style.display = '';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Update count
+    const summary = document.getElementById('batchWiseFilterSummary');
+    const countSpan = document.getElementById('batchWiseFilteredCount');
+    countSpan.textContent = visibleCount;
+    
+    if (visibleCount > 0) {
+        summary.classList.remove('hidden');
+    } else {
+        summary.classList.add('hidden');
+    }
+}
+
+// Update teacher list based on selected students
+function updateTeacherListForStudents() {
+    const selectedStudents = Array.from(document.querySelectorAll('.batchwise-student-checkbox:checked:not([disabled])'));
+    const teacherListContainer = document.getElementById('batchWiseTeacherList');
+    const teacherInfo = document.getElementById('batchWiseTeacherInfo');
+    
+    if (selectedStudents.length === 0) {
+        teacherListContainer.innerHTML = '<p class="text-center text-xs text-gray-400 py-8">No students selected yet</p>';
+        teacherInfo.innerHTML = '<p>Select students first. Teachers who teach the selected students\' batches will appear here.</p>';
+        return;
+    }
+    
+    // Get selected students' batch IDs
+    const selectedBatchIds = new Set();
+    selectedStudents.forEach(checkbox => {
+        const item = checkbox.closest('.batchwise-student-item');
+        const batchId = item.dataset.batchId;
+        if (batchId) {
+            selectedBatchIds.add(parseInt(batchId));
+        }
+    });
+    
+    // Find teachers who teach these batches
+    const relevantTeachers = [];
+    teacherBatchData.forEach(teacher => {
+        const teacherBatches = teacher.batches.filter(b => selectedBatchIds.has(b.id));
+        if (teacherBatches.length > 0) {
+            relevantTeachers.push({
+                ...teacher,
+                batches: teacherBatches
             });
+        }
+    });
+    
+    if (relevantTeachers.length === 0) {
+        teacherListContainer.innerHTML = '<p class="text-center text-xs text-gray-400 py-8">No teachers found for selected students\' batches</p>';
+        teacherInfo.innerHTML = '<p class="text-amber-600"><strong>Note:</strong> No teachers are assigned to teach the selected students\' batches.</p>';
+        return;
+    }
+    
+    // Update info
+    teacherInfo.innerHTML = `<p class="text-green-700"><strong>Found ${relevantTeachers.length} teacher(s)</strong> who teach the selected students. Select which teachers students should give feedback to.</p>`;
+    
+    // Build teacher list
+    teacherListContainer.innerHTML = '';
+    relevantTeachers.forEach(teacher => {
+        const teacherDiv = document.createElement('div');
+        teacherDiv.className = 'batchwise-teacher-item border border-green-200 rounded-lg p-3 bg-white hover:shadow-md transition-shadow';
+        teacherDiv.dataset.teacherId = teacher.id;
+        
+        // Group batches by subject
+        const batchesBySubject = {};
+        teacher.batches.forEach(batch => {
+            const key = `${batch.subject_id}_${batch.subject_name}`;
+            if (!batchesBySubject[key]) {
+                batchesBySubject[key] = {
+                    subject_id: batch.subject_id,
+                    subject_name: batch.subject_name,
+                    batches: []
+                };
+            }
+            batchesBySubject[key].batches.push(batch);
         });
+        
+        teacherDiv.innerHTML = `
+            <div class="flex items-start justify-between mb-2">
+                <label class="flex items-center flex-1 cursor-pointer">
+                    <input type="checkbox" name="batch_wise_teacher_ids[]" value="${teacher.id}" 
+                           class="form-checkbox h-4 w-4 text-green-600 batchwise-teacher-checkbox">
+                    <div class="ml-2">
+                        <p class="text-sm font-semibold text-gray-900">${teacher.name}</p>
+                        <p class="text-xs text-gray-600">${teacher.email}</p>
+                    </div>
+                </label>
+            </div>
+            <div class="ml-6 space-y-1">
+                ${Object.values(batchesBySubject).map(subjectGroup => `
+                    <div class="text-xs">
+                        <p class="font-semibold text-purple-700">${subjectGroup.subject_name}</p>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            ${subjectGroup.batches.map(batch => `
+                                <span class="inline-flex items-center px-2 py-0.5 bg-blue-50 border border-blue-200 rounded text-xs">
+                                    <span class="text-blue-900">${batch.division}</span>
+                                    <span class="mx-1 text-blue-400">•</span>
+                                    <span class="text-blue-700">${batch.name}</span>
+                                    ${batch.type === 'lab' ? '<span class="ml-1 px-1 bg-green-200 text-green-800 rounded text-xs">Lab</span>' : '<span class="ml-1 px-1 bg-indigo-200 text-indigo-800 rounded text-xs">Theory</span>'}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        teacherListContainer.appendChild(teacherDiv);
+    });
+}
+
+// Select all students in batch-wise section
+document.getElementById('select-all-batchwise-students')?.addEventListener('change', function() {
+    const visibleCheckboxes = Array.from(document.querySelectorAll('.batchwise-student-checkbox:not([disabled])'))
+        .filter(cb => cb.closest('.batchwise-student-item').style.display !== 'none');
+    
+    visibleCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+    
+    updateTeacherListForStudents();
+});
+
+// Select all teachers in batch-wise section
+document.getElementById('select-all-batchwise-teachers')?.addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.batchwise-teacher-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+// Initialize batch-wise section
+document.addEventListener('DOMContentLoaded', function() {
+    // Initially hide all batch-wise students
+    document.querySelectorAll('.batchwise-student-item').forEach(item => {
+        item.style.display = 'none';
+    });
+});
+
+// ===== TEACHER ASSIGN MODAL FUNCTIONS =====
+
+// Get all students data
+const allStudents = {!! json_encode($students->map(function($student) use ($assignments) {
+    return [
+        'id' => $student->id,
+        'name' => $student->user->name,
+        'enrollment_no' => $student->enrollment_no ?? $student->student_id,
+        'batch_id' => $student->batch_id,
+        'batch_name' => $student->batchGroup ? $student->batchGroup->batch_name : '',
+        'division' => $student->division ? $student->division->name : 'Unknown',
+        'semester' => $student->semester,
+        'is_assigned' => isset($assignments) ? $assignments->where('student_id', $student->id)->isNotEmpty() : false
+    ];
+})->values()) !!};
+
+let currentTeacherData = null;
+
+function openTeacherAssignModal(teacherId, teacherName, teacherEmail) {
+    // Find teacher data
+    const teacher = teacherBatchData.find(t => t.id === teacherId);
+    if (!teacher) {
+        alert('Teacher data not found');
+        return;
+    }
+    
+    currentTeacherData = teacher;
+    
+    // Update modal header
+    document.getElementById('modalTeacherName').textContent = teacherName;
+    document.getElementById('modalTeacherEmail').textContent = teacherEmail;
+    document.getElementById('modalTeacherNameSubmit').textContent = teacherName;
+    document.getElementById('teacherAssignTeacherId').value = teacherId;
+    
+    // Display teacher's batches
+    const batchesContainer = document.getElementById('modalTeacherBatches');
+    const batchesBySemester = {};
+    teacher.batches.forEach(batch => {
+        if (!batchesBySemester[batch.semester]) {
+            batchesBySemester[batch.semester] = [];
+        }
+        batchesBySemester[batch.semester].push(batch);
+    });
+    
+    let batchesHTML = '';
+    Object.keys(batchesBySemester).sort().forEach(semester => {
+        batchesHTML += `<div class="mb-2">
+            <p class="font-bold text-purple-700 mb-1">Semester ${semester}</p>
+            <div class="space-y-1">`;
+        batchesBySemester[semester].forEach(batch => {
+            batchesHTML += `
+                <label class="flex items-start gap-2 p-2 bg-white rounded border border-purple-200 cursor-pointer hover:bg-purple-50 transition-colors">
+                    <input type="checkbox" class="teacher-batch-checkbox form-checkbox h-3.5 w-3.5 text-purple-600 mt-0.5" 
+                           data-batch-id="${batch.id}" 
+                           onchange="filterStudentsByBatches()" 
+                           checked>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-purple-900">${batch.division}</span>
+                            <span class="text-purple-400">•</span>
+                            <span class="text-purple-700">${batch.name}</span>
+                            <span class="ml-auto px-1.5 py-0.5 ${batch.type === 'lab' ? 'bg-green-200 text-green-800' : 'bg-blue-200 text-blue-800'} rounded text-xs">${batch.type === 'lab' ? 'Lab' : 'Theory'}</span>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-0.5">${batch.subject_name}</p>
+                    </div>
+                </label>
+            `;
+        });
+        batchesHTML += `</div></div>`;
+    });
+    batchesContainer.innerHTML = batchesHTML;
+    
+    // Get students from teacher's batches
+    const teacherBatchIds = teacher.batches.map(b => b.id);
+    const teacherStudents = allStudents.filter(s => teacherBatchIds.includes(s.batch_id));
+    
+    // Populate filter dropdowns
+    populateModalFilters(teacherStudents);
+    
+    // Display students
+    displayModalStudents(teacherStudents);
+    
+    // Show modal
+    const modal = document.getElementById('teacherAssignModal');
+    modal.classList.remove('hidden');
+}
+
+function closeTeacherAssignModal() {
+    const modal = document.getElementById('teacherAssignModal');
+    modal.classList.add('hidden');
+    currentTeacherData = null;
+    
+    // Reset form
+    document.getElementById('teacherAssignForm').reset();
+    document.getElementById('modalStudentList').innerHTML = '';
+}
+
+function populateModalFilters(students) {
+    // Get unique values
+    const semesters = [...new Set(students.map(s => s.semester))].sort();
+    const divisions = [...new Set(students.map(s => s.division))].sort();
+    const batches = [...new Set(students.map(s => s.batch_name).filter(b => b))].sort();
+    
+    // Populate semester filter
+    const semesterFilter = document.getElementById('modalSemesterFilter');
+    semesterFilter.innerHTML = '<option value="">All</option>';
+    semesters.forEach(sem => {
+        semesterFilter.innerHTML += `<option value="${sem}">Semester ${sem}</option>`;
+    });
+    
+    // Populate division filter
+    const divisionFilter = document.getElementById('modalDivisionFilter');
+    divisionFilter.innerHTML = '<option value="">All</option>';
+    divisions.forEach(div => {
+        divisionFilter.innerHTML += `<option value="${div}">${div}</option>`;
+    });
+    
+    // Populate batch filter
+    const batchFilter = document.getElementById('modalBatchFilter');
+    batchFilter.innerHTML = '<option value="">All</option>';
+    batches.forEach(batch => {
+        batchFilter.innerHTML += `<option value="${batch}">${batch}</option>`;
+    });
+}
+
+function displayModalStudents(students) {
+    const container = document.getElementById('modalStudentList');
+    
+    if (students.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-400 py-8">No students found in this teacher\'s batches</p>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    students.forEach(student => {
+        const isAssigned = student.is_assigned;
+        const studentDiv = document.createElement('label');
+        studentDiv.className = `modal-student-item flex items-center p-2 hover:bg-blue-50 rounded transition-colors ${isAssigned ? 'bg-green-50' : 'bg-white'}`;
+        studentDiv.dataset.semester = student.semester;
+        studentDiv.dataset.division = student.division;
+        studentDiv.dataset.batch = student.batch_name;
+        
+        studentDiv.innerHTML = `
+            <input type="checkbox" name="teacher_assign_student_ids[]" value="${student.id}"
+                   ${isAssigned ? 'disabled checked' : ''}
+                   class="form-checkbox h-3 w-3 text-blue-600 modal-student-checkbox">
+            <div class="ml-2 flex-1 min-w-0">
+                <div class="flex items-center gap-1">
+                    <p class="text-xs font-medium text-gray-900 truncate">${student.name}</p>
+                    <span class="text-xs px-1 py-0.5 bg-blue-100 text-blue-700 rounded">${student.division}</span>
+                    ${student.batch_name ? `<span class="text-xs px-1 py-0.5 bg-purple-100 text-purple-700 rounded">${student.batch_name}</span>` : ''}
+                </div>
+                <p class="text-xs text-gray-500">${student.enrollment_no}</p>
+            </div>
+            ${isAssigned ? '<span class="ml-2 text-xs font-medium text-green-600">✓</span>' : ''}
+        `;
+        
+        container.appendChild(studentDiv);
+    });
+    
+    updateModalFilterSummary();
+}
+
+function filterModalStudents() {
+    const semester = document.getElementById('modalSemesterFilter').value;
+    const division = document.getElementById('modalDivisionFilter').value;
+    const batch = document.getElementById('modalBatchFilter').value;
+    
+    const studentItems = document.querySelectorAll('.modal-student-item');
+    let visibleCount = 0;
+    
+    studentItems.forEach(item => {
+        const itemSemester = item.dataset.semester;
+        const itemDivision = item.dataset.division;
+        const itemBatch = item.dataset.batch;
+        const checkbox = item.querySelector('.modal-student-checkbox');
+        
+        let show = true;
+        
+        if (semester && semester !== itemSemester) show = false;
+        if (division && division !== itemDivision) show = false;
+        if (batch && batch !== itemBatch) show = false;
+        
+        if (show && !checkbox.disabled) {
+            item.style.display = '';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    updateModalFilterSummary();
+}
+
+function updateModalFilterSummary() {
+    const visibleItems = Array.from(document.querySelectorAll('.modal-student-item'))
+        .filter(item => item.style.display !== 'none' && !item.querySelector('.modal-student-checkbox').disabled);
+    
+    const summary = document.getElementById('modalFilterSummary');
+    const countSpan = document.getElementById('modalFilteredCount');
+    countSpan.textContent = visibleItems.length;
+    
+    if (visibleItems.length > 0) {
+        summary.classList.remove('hidden');
+    } else {
+        summary.classList.add('hidden');
+    }
+}
+
+// Toggle all teacher batches
+function toggleAllTeacherBatches(checked) {
+    document.querySelectorAll('.teacher-batch-checkbox').forEach(cb => {
+        cb.checked = checked;
+    });
+    filterStudentsByBatches();
+}
+
+// Filter students based on selected batches
+function filterStudentsByBatches() {
+    const selectedBatchIds = Array.from(document.querySelectorAll('.teacher-batch-checkbox:checked'))
+        .map(cb => parseInt(cb.dataset.batchId));
+    
+    // Filter students from all students
+    const filteredStudents = allStudents.filter(s => selectedBatchIds.includes(s.batch_id));
+    
+    // Repopulate filters and display
+    populateModalFilters(filteredStudents);
+    displayModalStudents(filteredStudents);
+    
+    // Update "Select All Batches" checkbox state
+    const allBatchCheckboxes = document.querySelectorAll('.teacher-batch-checkbox');
+    const checkedBatchCheckboxes = document.querySelectorAll('.teacher-batch-checkbox:checked');
+    const selectAllBatches = document.getElementById('select-all-teacher-batches');
+    if (selectAllBatches) {
+        selectAllBatches.checked = allBatchCheckboxes.length === checkedBatchCheckboxes.length;
+        selectAllBatches.indeterminate = checkedBatchCheckboxes.length > 0 && checkedBatchCheckboxes.length < allBatchCheckboxes.length;
+    }
+}
+
+// Select all students in modal
+document.getElementById('select-all-teacher-students')?.addEventListener('change', function() {
+    const visibleCheckboxes = Array.from(document.querySelectorAll('.modal-student-checkbox:not([disabled])'))
+        .filter(cb => cb.closest('.modal-student-item').style.display !== 'none');
+    
+    visibleCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+// Form validation before submission
+document.getElementById('teacherAssignForm')?.addEventListener('submit', function(e) {
+    const selectedStudents = Array.from(document.querySelectorAll('.modal-student-checkbox:checked:not([disabled])'));
+    
+    if (selectedStudents.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one student to assign the feedback form.');
+        return false;
+    }
+    
+    // Confirm assignment
+    const teacherName = document.getElementById('modalTeacherName').textContent;
+    const confirmation = confirm(`Assign feedback form to ${selectedStudents.length} student(s) for ${teacherName}?`);
+    
+    if (!confirmation) {
+        e.preventDefault();
+        return false;
     }
 });
 </script>

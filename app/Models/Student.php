@@ -12,6 +12,7 @@ class Student extends Model
     protected $fillable = [
         'user_id',
         'student_id',
+        'enrollment_no',
         'first_name',
         'middle_name',
         'last_name',
@@ -27,8 +28,11 @@ class Student extends Model
         'email',
         'personal_email',
         'department_id',
+        'division_id',
+        'batch_id',
+        'semester',
+        'branch',
         'course',
-        'batch',
         'academic_year',
         'cgpa',
         'ssc_percentage',
@@ -46,7 +50,6 @@ class Student extends Model
     {
         return [
             'dob' => 'date',
-            'batch' => 'integer',
             'cgpa' => 'decimal:2',
             'academic_details' => 'array',
         ];
@@ -60,6 +63,16 @@ class Student extends Model
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
+
+    public function batchGroup()
+    {
+        return $this->belongsTo(Batch::class, 'batch_id');
     }
 
     public function projects()

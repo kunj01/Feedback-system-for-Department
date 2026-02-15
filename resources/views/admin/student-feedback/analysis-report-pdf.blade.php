@@ -207,7 +207,7 @@
         <div class="summary-grid">
             <div class="summary-item">
                 <h4>Overall Average Rating</h4>
-                <div class="big-number">{{ $analysis['overall_average'] }}/5.0</div>
+                <div class="big-number">{{ number_format(($analysis['overall_average'] / 5) * 100, 1) }}%</div>
                 <p style="font-size: 8px; color: #6b7280;">Based on {{ $analysis['total_responses'] }} responses across 20 parameters</p>
             </div>
             <div class="summary-item">
@@ -260,7 +260,7 @@
                                     @elseif($stats['average'] >= 3.0) avg-fair
                                     @else avg-poor
                                     @endif">
-                                    {{ $stats['average'] }}
+                                    {{ number_format(($stats['average'] / 5) * 100, 1) }}%
                                 </span>
                             </td>
                         </tr>
@@ -304,7 +304,7 @@
                                     @elseif($stats['average'] >= 3.0) avg-fair
                                     @else avg-poor
                                     @endif">
-                                    {{ $stats['average'] }}
+                                    {{ number_format(($stats['average'] / 5) * 100, 1) }}%
                                 </span>
                             </td>
                         </tr>
@@ -348,7 +348,7 @@
                                     @elseif($stats['average'] >= 3.0) avg-fair
                                     @else avg-poor
                                     @endif">
-                                    {{ $stats['average'] }}
+                                    {{ number_format(($stats['average'] / 5) * 100, 1) }}%
                                 </span>
                             </td>
                         </tr>

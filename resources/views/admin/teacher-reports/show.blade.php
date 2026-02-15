@@ -76,7 +76,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200">
                 <h4 class="font-semibold text-blue-900 mb-3">Overall Average Rating</h4>
-                <div class="text-4xl font-bold text-blue-600">{{ $analysis['overall_average'] }}<span class="text-2xl">/5.0</span></div>
+                <div class="text-4xl font-bold text-blue-600">{{ number_format(($analysis['overall_average'] / 5) * 100, 1) }}<span class="text-2xl">%</span></div>
                 <div class="mt-2 text-sm text-blue-700">
                     Based on {{ $responses->count() }} responses across 8 instructor parameters
                 </div>
@@ -152,7 +152,7 @@
                                     @elseif($stats['average'] >= 3.0) bg-yellow-100 text-yellow-800
                                     @else bg-red-100 text-red-800
                                     @endif">
-                                    {{ $stats['average'] }}/5.0
+                                    {{ number_format(($stats['average'] / 5) * 100, 1) }}%
                                 </span>
                             </td>
                         </tr>

@@ -146,8 +146,11 @@ class FormController extends Controller
 
         // If admin, show assignment interface
         if (auth()->user()->hasRole('Admin')) {
-            // Get all students
-            $students = Student::with('user')->get();
+            // Get all students with division and batchGroup relationships
+            $students = Student::with(['user', 'division', 'batchGroup'])
+                ->orderBy('semester', 'asc')
+                ->orderBy('enrollment_no', 'asc')
+                ->get();
             
             // Get assignments for this form
             $assignments = FormAssignment::where('form_name', $filename)
@@ -163,6 +166,24 @@ class FormController extends Controller
 
             // Get multi-teacher mode status from system settings
             $multiTeacherModeEnabled = \App\Models\SystemSettings::get('multi_teacher_feedback_mode', false);
+            
+            // Get teachers with their batch assignments
+            $teachers = \App\Models\Teacher::with([
+                'batches.division', 
+                'batches' => function($query) {
+                    $query->orderBy('batch_name', 'asc');
+                }
+            ])
+            ->whereHas('batches') // Only teachers with batch assignments
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(function($teacher) {
+                // Group batches by semester and division for easier display
+                $teacher->batchesBySemester = $teacher->batches->groupBy(function($batch) {
+                    return $batch->division->semester;
+                });
+                return $teacher;
+            });
 
             return view('admin.forms.assign', [
                 'formTitle' => $formTitle,
@@ -171,6 +192,7 @@ class FormController extends Controller
                 'assignments' => $assignments,
                 'subjects' => $subjects,
                 'multiTeacherModeEnabled' => $multiTeacherModeEnabled,
+                'teachers' => $teachers,
             ]);
         }
 
@@ -261,17 +283,39 @@ class FormController extends Controller
     {
         abort_unless(auth()->user()->hasRole('Admin'), 403, 'Unauthorized action.');
 
-        $request->validate([
-            'student_ids' => 'required|array',
-            'student_ids.*' => 'exists:students,id',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'grace_period_hours' => 'nullable|integer|min:0|max:168',
-            'is_multi_teacher' => 'nullable|boolean',
-            'subject_ids' => 'nullable|array',
-            'subject_ids.*' => 'exists:subjects,id',
-            'teacher_ids' => 'nullable|array',
-        ]);
+        // Check assignment mode
+        $batchWiseMode = $request->has('batch_wise_mode');
+        $teacherAssignMode = $request->has('teacher_assign_mode');
+
+        if ($teacherAssignMode) {
+            // Teacher assign mode validation
+            $request->validate([
+                'teacher_assign_student_ids' => 'required|array|min:1',
+                'teacher_assign_student_ids.*' => 'exists:students,id',
+                'teacher_assign_teacher_id' => 'required|exists:teachers,id',
+            ]);
+        } elseif ($batchWiseMode) {
+            // Batch-wise assignment validation
+            $request->validate([
+                'batch_wise_student_ids' => 'required|array|min:1',
+                'batch_wise_student_ids.*' => 'exists:students,id',
+                'batch_wise_teacher_ids' => 'required|array|min:1',
+                'batch_wise_teacher_ids.*' => 'exists:teachers,id',
+            ]);
+        } else {
+            // Regular assignment validation
+            $request->validate([
+                'student_ids' => 'required|array',
+                'student_ids.*' => 'exists:students,id',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after:start_date',
+                'grace_period_hours' => 'nullable|integer|min:0|max:168',
+                'is_multi_teacher' => 'nullable|boolean',
+                'subject_ids' => 'nullable|array',
+                'subject_ids.*' => 'exists:subjects,id',
+                'teacher_ids' => 'nullable|array',
+            ]);
+        }
 
         $filePath = public_path('documents/' . $filename);
         if (!File::exists($filePath)) {
@@ -284,6 +328,126 @@ class FormController extends Controller
         $formTitle = ucwords(str_replace('_', ' ', $formTitle));
 
         $assignedCount = 0;
+
+        if ($teacherAssignMode) {
+            // Teacher assign mode - assign students to a specific teacher
+            $studentIds = $request->teacher_assign_student_ids;
+            $teacherId = $request->teacher_assign_teacher_id;
+
+            // Get students with their batches
+            $students = \App\Models\Student::whereIn('id', $studentIds)
+                ->with('batchGroup')
+                ->get();
+
+            // Get teacher with their batch assignments
+            $teacher = \App\Models\Teacher::with(['batches' => function($query) {
+                $query->with('division');
+            }])->findOrFail($teacherId);
+
+            // For each student, find their batch in teacher's assignments and create form assignment
+            foreach ($students as $student) {
+                if (!$student->batch_id) {
+                    continue; // Skip students without batch assignment
+                }
+
+                // Find if this teacher teaches this student's batch
+                $teacherBatch = $teacher->batches->firstWhere('id', $student->batch_id);
+                
+                if ($teacherBatch) {
+                    // Teacher teaches this student's batch
+                    $pivotData = $teacherBatch->pivot;
+                    $subjectId = $pivotData->subject_id;
+
+                    // Create assignment
+                    $assignment = FormAssignment::firstOrCreate(
+                        [
+                            'form_name' => $filename,
+                            'student_id' => $student->id,
+                            'subject_id' => $subjectId,
+                            'teacher_id' => $teacher->id,
+                        ],
+                        [
+                            'form_title' => $formTitle,
+                            'assigned_by' => auth()->id(),
+                            'start_date' => $request->start_date,
+                            'end_date' => $request->end_date,
+                            'grace_period_hours' => $request->grace_period_hours ?? 0,
+                            'is_multi_teacher' => true,
+                            'is_lab' => $pivotData->type === 'lab',
+                        ]
+                    );
+
+                    if ($assignment->wasRecentlyCreated) {
+                        $assignedCount++;
+                    }
+                }
+            }
+
+            return redirect()->route('forms.show', $filename)
+                ->with('success', "Successfully assigned form to $assignedCount student(s) for teacher {$teacher->name}!");
+        } elseif ($batchWiseMode) {
+            // Batch-wise assignment mode
+            $studentIds = $request->batch_wise_student_ids;
+            $teacherIds = $request->batch_wise_teacher_ids;
+
+            // Get students with their batches
+            $students = \App\Models\Student::whereIn('id', $studentIds)
+                ->with('batchGroup')
+                ->get();
+
+            // Get teachers with their batch assignments
+            $teachers = \App\Models\Teacher::whereIn('id', $teacherIds)
+                ->with(['batches' => function($query) {
+                    $query->with('division');
+                }])
+                ->get();
+
+            // For each student, find teachers who teach their batch and create assignments
+            foreach ($students as $student) {
+                if (!$student->batch_id) {
+                    continue; // Skip students without batch assignment
+                }
+
+                foreach ($teachers as $teacher) {
+                    // Find if this teacher teaches this student's batch
+                    $teacherBatch = $teacher->batches->firstWhere('id', $student->batch_id);
+                    
+                    if ($teacherBatch) {
+                        // Teacher teaches this student's batch
+                        $pivotData = $teacherBatch->pivot;
+                        $subjectId = $pivotData->subject_id;
+
+                        // Create assignment
+                        $assignment = FormAssignment::firstOrCreate(
+                            [
+                                'form_name' => $filename,
+                                'student_id' => $student->id,
+                                'subject_id' => $subjectId,
+                                'teacher_id' => $teacher->id,
+                            ],
+                            [
+                                'form_title' => $formTitle,
+                                'assigned_by' => auth()->id(),
+                                'start_date' => $request->start_date,
+                                'end_date' => $request->end_date,
+                                'grace_period_hours' => $request->grace_period_hours ?? 0,
+                                'is_multi_teacher' => true,
+                                'is_lab' => $pivotData->type === 'lab',
+                            ]
+                        );
+
+                        if ($assignment->wasRecentlyCreated) {
+                            $assignedCount++;
+                        }
+                    }
+                }
+            }
+
+            return redirect()->route('forms.show', $filename)
+                ->with('success', "Form assigned successfully! Created $assignedCount new assignment(s) based on batch-teacher mappings.");
+        }
+
+        // Regular assignment modes (existing code)
         $isMultiTeacher = $request->has('is_multi_teacher');
         
         if ($isMultiTeacher && $request->has('subject_ids') && $request->has('teacher_ids')) {

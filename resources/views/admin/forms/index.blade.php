@@ -163,15 +163,15 @@
     </div>
 
     <!-- Stats Card -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="card">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+        <div class="bg-white rounded-lg shadow-md p-4">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-gray-600 text-sm">Total Forms</p>
-                    <p class="text-3xl font-bold text-gray-800">{{ count($forms) }}</p>
+                    <p class="text-gray-600 text-xs">Total Forms</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ count($forms) }}</p>
                 </div>
-                <div class="bg-blue-100 p-3 rounded-full">
-                    <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                <div class="bg-blue-100 p-2 rounded-full">
+                    <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
                         <path d="M14 2v6h6M9 15h6M9 12h6M9 18h6" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>
                     </svg>
@@ -179,28 +179,28 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="bg-white rounded-lg shadow-md p-4">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-gray-600 text-sm">Word Documents</p>
-                    <p class="text-3xl font-bold text-blue-600">{{ count(array_filter($forms, fn($f) => in_array($f['extension'], ['DOC', 'DOCX']))) }}</p>
+                    <p class="text-gray-600 text-xs">Word Documents</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ count(array_filter($forms, fn($f) => in_array($f['extension'], ['DOC', 'DOCX']))) }}</p>
                 </div>
-                <div class="bg-blue-100 p-3 rounded-full">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-blue-100 p-2 rounded-full">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <div class="card">
+        <div class="bg-white rounded-lg shadow-md p-4">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-gray-600 text-sm">PDF Documents</p>
-                    <p class="text-3xl font-bold text-red-600">{{ count(array_filter($forms, fn($f) => $f['extension'] === 'PDF')) }}</p>
+                    <p class="text-gray-600 text-xs">PDF Documents</p>
+                    <p class="text-2xl font-bold text-red-600">{{ count(array_filter($forms, fn($f) => $f['extension'] === 'PDF')) }}</p>
                 </div>
-                <div class="bg-red-100 p-3 rounded-full">
-                    <svg class="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                <div class="bg-red-100 p-2 rounded-full">
+                    <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
                         <path d="M14 2v6h6"/>
                         <path d="M10 12h4v6h-4z" fill="white"/>
@@ -213,36 +213,36 @@
 
     <!-- Forms List -->
     @if(count($forms) > 0)
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($forms as $form)
-                <div class="card hover:shadow-lg transition duration-200">
+                <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition duration-200 p-3">
                     <!-- File Icon & Type Badge -->
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="bg-{{ $form['color'] }}-100 p-4 rounded-lg">
-                            <svg class="w-10 h-10 text-{{ $form['color'] }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="bg-{{ $form['color'] }}-100 p-2 rounded-lg">
+                            <svg class="w-6 h-6 text-{{ $form['color'] }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $form['icon'] }}"></path>
                             </svg>
                         </div>
-                        <span class="px-3 py-1 bg-{{ $form['color'] }}-100 text-{{ $form['color'] }}-800 rounded-full text-xs font-semibold">
+                        <span class="px-2 py-0.5 bg-{{ $form['color'] }}-100 text-{{ $form['color'] }}-800 rounded-full text-xs font-semibold">
                             {{ $form['extension'] }}
                         </span>
                     </div>
 
                     <!-- File Name -->
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2 truncate" title="{{ $form['display_name'] }}">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-1.5 truncate" title="{{ $form['display_name'] }}">
                         {{ $form['display_name'] }}
                     </h3>
 
                     <!-- File Info -->
-                    <div class="space-y-2 text-sm text-gray-600 mb-4">
+                    <div class="space-y-1 text-xs text-gray-600 mb-2">
                         <div class="flex items-center">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
                             </svg>
-                            <span>Size: {{ $form['size'] }}</span>
+                            <span>{{ $form['size'] }}</span>
                         </div>
                         <div class="flex items-center">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <span>{{ $form['modified'] }}</span>
@@ -250,33 +250,33 @@
                     </div>
 
                     <!-- Assignment Stats -->
-                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="mb-2 p-1.5 bg-gray-50 rounded-lg">
+                        <div class="grid grid-cols-3 gap-1 text-center text-xs">
                             <div>
-                                <p class="text-gray-600">Assigned</p>
-                                <p class="font-bold text-gray-800">{{ $form['assignment_count'] }}</p>
+                                <p class="text-gray-600 text-xs">Assigned</p>
+                                <p class="font-bold text-gray-800 text-sm">{{ $form['assignment_count'] }}</p>
                             </div>
                             <div>
-                                <p class="text-gray-600">Pending</p>
-                                <p class="font-bold text-yellow-600">{{ $form['pending_count'] }}</p>
+                                <p class="text-gray-600 text-xs">Pending</p>
+                                <p class="font-bold text-yellow-600 text-sm">{{ $form['pending_count'] }}</p>
                             </div>
                             <div>
-                                <p class="text-gray-600">Done</p>
-                                <p class="font-bold text-green-600">{{ $form['completed_count'] }}</p>
+                                <p class="text-gray-600 text-xs">Done</p>
+                                <p class="font-bold text-green-600 text-sm">{{ $form['completed_count'] }}</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Actions -->
-                    <div class="flex space-x-2 border-t pt-4">
-                        <a href="{{ route('forms.show', $form['name']) }}" class="btn-primary flex-1 text-center text-sm">
-                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex space-x-1.5 border-t pt-2.5">
+                        <a href="{{ route('forms.show', $form['name']) }}" class="btn-primary flex-1 text-center text-xs py-1.5">
+                            <svg class="w-3.5 h-3.5 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                             </svg>
                             Assign
                         </a>
-                        <a href="{{ route('forms.download', $form['name']) }}" class="btn-secondary flex-1 text-center text-sm">
-                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <a href="{{ route('forms.download', $form['name']) }}" class="btn-secondary flex-1 text-center text-xs py-1.5">
+                            <svg class="w-3.5 h-3.5 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                             </svg>
                             Download
@@ -284,8 +284,8 @@
                         <form action="{{ route('forms.destroy', $form['name']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this form and all its assignments?');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn-danger text-sm">
-                                <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <button type="submit" class="btn-danger text-xs py-1.5">
+                                <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                 </svg>
                                 Delete

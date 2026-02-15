@@ -12,7 +12,12 @@ class Subject extends Model
     protected $fillable = [
         'name',
         'code',
+        'subject_code',
+        'subject_name',
         'semester',
+        'branch',
+        'subject_type',
+        'credits',
         'sort_order',
         'description',
         'is_active',
@@ -24,7 +29,16 @@ class Subject extends Model
         'has_lab' => 'boolean',
         'semester' => 'integer',
         'sort_order' => 'integer',
+        'credits' => 'integer',
     ];
+
+    /**
+     * Get timetable entries for this subject
+     */
+    public function timetableEntries()
+    {
+        return $this->hasMany(Timetable::class);
+    }
 
     /**
      * Get all teachers assigned to this subject

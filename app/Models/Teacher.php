@@ -26,6 +26,13 @@ class Teacher extends Model
         return $this->belongsToMany(Subject::class, 'subject_teacher');
     }
 
+    public function batches()
+    {
+        return $this->belongsToMany(Batch::class, 'batch_teacher')
+            ->withPivot('subject_id', 'type', 'notes')
+            ->withTimestamps();
+    }
+
     public function formAssignments()
     {
         return $this->hasMany(FormAssignment::class);

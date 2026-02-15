@@ -80,7 +80,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200">
                 <h4 class="font-semibold text-blue-900 mb-3">Overall Average Rating</h4>
-                <div class="text-4xl font-bold text-blue-600">{{ $analysis['overall_average'] }}<span class="text-2xl">/5.0</span></div>
+                <div class="text-4xl font-bold text-blue-600">{{ number_format(($analysis['overall_average'] / 5) * 100, 1) }}<span class="text-2xl">%</span></div>
                 <div class="mt-2 text-sm text-blue-700">
                     Based on {{ $analysis['total_responses'] }} responses across 20 parameters
                 </div>
@@ -270,7 +270,7 @@
                                             @elseif($stats['average'] >= 3.0) bg-yellow-600 text-white
                                             @else bg-red-600 text-white
                                             @endif">
-                                            {{ $stats['average'] }}
+                                            {{ number_format(($stats['average'] / 5) * 100, 1) }}%
                                         </span>
                                     </td>
                                 </tr>
@@ -330,7 +330,7 @@
                                             @elseif($stats['average'] >= 3.0) bg-yellow-600 text-white
                                             @else bg-red-600 text-white
                                             @endif">
-                                            {{ $stats['average'] }}
+                                            {{ number_format(($stats['average'] / 5) * 100, 1) }}%
                                         </span>
                                     </td>
                                 </tr>
@@ -390,7 +390,7 @@
                                             @elseif($stats['average'] >= 3.0) bg-yellow-600 text-white
                                             @else bg-red-600 text-white
                                             @endif">
-                                            {{ $stats['average'] }}
+                                            {{ number_format(($stats['average'] / 5) * 100, 1) }}%
                                         </span>
                                     </td>
                                 </tr>
@@ -414,13 +414,13 @@
                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                     </svg>
-                    Strengths (Rating ≥ 4.5)
+                    Strengths (Rating ≥ 90%)
                 </h4>
                 @if(!empty($analysis['strengths_weaknesses']['strengths']))
                     <ul class="space-y-2">
                         @foreach($analysis['strengths_weaknesses']['strengths'] as $strength)
                             <li class="flex items-start">
-                                <span class="inline-block w-12 text-green-700 font-bold text-sm">{{ $strength['average'] }}</span>
+                                <span class="inline-block w-12 text-green-700 font-bold text-sm">{{ number_format(($strength['average'] / 5) * 100, 1) }}%</span>
                                 <span class="text-gray-700 text-sm">{{ $strength['question'] }}</span>
                             </li>
                         @endforeach
@@ -436,19 +436,19 @@
                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                     </svg>
-                    Areas for Improvement (Rating < 3.0)
+                    Areas for Improvement (Rating < 60%)
                 </h4>
                 @if(!empty($analysis['strengths_weaknesses']['weaknesses']))
                     <ul class="space-y-2">
                         @foreach($analysis['strengths_weaknesses']['weaknesses'] as $weakness)
                             <li class="flex items-start">
-                                <span class="inline-block w-12 text-red-700 font-bold text-sm">{{ $weakness['average'] }}</span>
+                                <span class="inline-block w-12 text-red-700 font-bold text-sm">{{ number_format(($weakness['average'] / 5) * 100, 1) }}%</span>
                                 <span class="text-gray-700 text-sm">{{ $weakness['question'] }}</span>
                             </li>
                         @endforeach
                     </ul>
                 @else
-                    <p class="text-gray-600 text-sm italic">No parameters scored below 3.0 - Good overall performance!</p>
+                    <p class="text-gray-600 text-sm italic">No parameters scored below 60% - Good overall performance!</p>
                 @endif
             </div>
         </div>

@@ -293,7 +293,7 @@
                             <td class="stat-cell-good"><strong>{{ number_format($stat['percentages'][3], 1) }}%</strong></td>
                             <td class="stat-cell-satisfactory"><strong>{{ number_format($stat['percentages'][2], 1) }}%</strong></td>
                             <td class="stat-cell-needs"><strong>{{ number_format($stat['percentages'][1], 1) }}%</strong></td>
-                            <td><strong style="color: #2563eb;">{{ number_format($stat['average'], 2) }}</strong></td>
+                            <td><strong style="color: #2563eb;">{{ number_format(($stat['average'] / 5) * 100, 1) }}%</strong></td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -321,7 +321,7 @@
                         <td class="stat-cell-good"><strong>{{ number_format($overall_summary['percentages'][3], 2) }}%</strong></td>
                         <td class="stat-cell-satisfactory"><strong>{{ number_format($overall_summary['percentages'][2], 2) }}%</strong></td>
                         <td class="stat-cell-needs"><strong>{{ number_format($overall_summary['percentages'][1], 2) }}%</strong></td>
-                        <td><strong style="color: #4f46e5; font-size: 10pt;">{{ number_format($overall_summary['average'], 2) }} / 5.00</strong></td>
+                        <td><strong style="color: #4f46e5; font-size: 10pt;">{{ number_format(($overall_summary['average'] / 5) * 100, 1) }}%</strong></td>
                     </tr>
                 </tbody>
             </table>
@@ -372,7 +372,7 @@
                 <p>
                     The comprehensive analysis of curriculum feedback from external industry and academic experts 
                     provides valuable insights into the strengths and areas for improvement of the current curriculum. 
-                    With an overall average rating of <strong>{{ number_format($overall_summary['average'], 2) }} out of 5.00</strong>, 
+                    With an overall average rating of <strong>{{ number_format(($overall_summary['average'] / 5) * 100, 1) }}%</strong>, 
                     the curriculum demonstrates 
                     @if($overall_summary['average'] >= 4.5)
                         exceptional quality and industry alignment.

@@ -129,7 +129,7 @@
                                     <span class="font-semibold">{{ number_format($stat['percentages'][1], 1) }}%</span>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-center text-gray-900">
-                                    <span class="font-bold text-blue-600">{{ number_format($stat['average'], 2) }}</span>
+                                    <span class="font-bold text-blue-600">{{ number_format(($stat['average'] / 5) * 100, 1) }}%</span>
                                 </td>
                             </tr>
                         @endforeach
@@ -217,7 +217,7 @@
                                 {{ number_format($overall_summary['percentages'][1], 2) }}%
                             </td>
                             <td class="px-4 py-4 text-base text-center font-bold text-indigo-700 bg-indigo-50">
-                                {{ number_format($overall_summary['average'], 2) }} / 5.00
+                                {{ number_format(($overall_summary['average'] / 5) * 100, 1) }}%
                             </td>
                         </tr>
                     </tbody>
@@ -288,7 +288,7 @@
                 <p class="text-gray-800 leading-relaxed text-justify">
                     The comprehensive analysis of curriculum feedback from external industry and academic experts 
                     provides valuable insights into the strengths and areas for improvement of the current curriculum. 
-                    With an overall average rating of <strong class="text-blue-700">{{ number_format($overall_summary['average'], 2) }} out of 5.00</strong>, 
+                    With an overall average rating of <strong class="text-blue-700">{{ number_format(($overall_summary['average'] / 5) * 100, 1) }}%</strong>, 
                     the curriculum demonstrates 
                     @if($overall_summary['average'] >= 4.5)
                         exceptional quality and industry alignment.
