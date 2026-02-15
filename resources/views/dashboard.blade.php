@@ -19,27 +19,24 @@
         // This ensures that forms with multiple teachers are grouped together as ONE form
         $groupedAssignments = $assignedForms->groupBy('form_name');
         
-        // Total unique forms (not individual teacher assignments)
-        $totalAssignments = $groupedAssignments->count();
+        // Calculate total forms to submit based on subjects and teachers
+        // For example: 4 subjects × 2 teachers each = 8 forms to submit
+        // Each teacher-subject combination requires a separate form submission
+        $totalAssignments = $assignedForms->count(); // Total teacher-subject combinations
         
-        // Count pending forms (forms that have at least one pending teacher feedback)
-        // A form is pending if ANY teacher feedback is not yet submitted
-        $pendingAssignments = $groupedAssignments->filter(function($group) {
-            return $group->contains('status', 'pending');
-        })->count();
+        // Count pending individual submissions (each teacher-subject combination)
+        // A pending submission is one where the status is 'pending'
+        $pendingAssignments = $assignedForms->where('status', 'pending')->count();
         
-        // Count fully completed forms (forms where ALL teacher feedbacks are submitted)
-        // A form is completed ONLY when feedback for ALL teachers has been submitted
-        // Example: If a form has 2 teachers, both feedbacks must be completed
-        $completedAssignments = $groupedAssignments->filter(function($group) {
-            return $group->every(fn($a) => $a->status === 'completed');
-        })->count();
+        // Count completed individual submissions
+        // Each completed submission represents one teacher-subject feedback completed
+        $completedAssignments = $assignedForms->where('status', 'completed')->count();
     }
 @endphp
 
 <!-- Welcome Section -->
-<div class="mb-6">
-    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-6 text-white">
+<div class="mb-4">
+    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-4 text-white">
         <h2 class="text-2xl font-bold mb-2">Welcome, {{ $user->name }}!</h2>
         @if($isAdmin)
             <p class="text-blue-100">Manage forms and assign them to students.</p>
@@ -53,7 +50,7 @@
 
 @if($isAdmin)
     <!-- Admin Dashboard -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div class="card bg-white">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
@@ -215,7 +212,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-600">Total Forms</p>
+                    <p class="text-sm text-gray-600">Total Submissions Required</p>
                     <p class="text-2xl font-bold text-gray-800">{{ $totalAssignments }}</p>
                 </div>
             </div>
@@ -229,7 +226,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-600">Pending</p>
+                    <p class="text-sm text-gray-600">Remaining to Submit</p>
                     <p class="text-2xl font-bold text-gray-800">{{ $pendingAssignments }}</p>
                 </div>
             </div>
@@ -251,12 +248,12 @@
     </div>
 
     <!-- Assigned Feedback -->
-    <div class="mb-6">
-        <div class="flex items-center justify-between mb-4">
+    <div class="mb-4">
+        <div class="flex items-center justify-between mb-3">
             <h3 class="text-xl font-bold text-gray-800">📋 Assigned Feedback</h3>
             @if($totalAssignments > 0)
                 <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
-                    {{ $pendingAssignments }} Pending
+                    {{ $pendingAssignments }} Remaining
                 </span>
             @endif
         </div>

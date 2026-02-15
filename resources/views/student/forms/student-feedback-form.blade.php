@@ -7,100 +7,123 @@
 <style>
 /* Smooth transitions for reasoning textareas */
 [id^="reasoning_"] {
-    transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.3s ease-in-out;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                margin-top 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
 [id^="reasoning_"].show {
-    max-height: 250px !important;
+    max-height: 280px !important;
     opacity: 1 !important;
+    margin-top: 1rem !important;
+    padding-top: 0.5rem !important;
 }
 
 [id^="reasoning_"].hidden {
     max-height: 0 !important;
     opacity: 0 !important;
     margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 [id^="reasoning_"] textarea {
-    transition: transform 0.2s ease-in-out;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.3s ease-in-out;
 }
 
 [id^="reasoning_"].show textarea {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[id^="reasoning_"].hidden textarea {
+    transform: translateY(-10px) scale(0.98);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Focus effect */
+[id^="reasoning_"] textarea:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    transform: translateY(0) scale(1.01);
 }
 </style>
 
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+<div class="max-w-6xl mx-auto py-3 px-3 sm:px-4">
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-        <div class="p-6 sm:px-20 bg-white border-b border-gray-200">
-            <div class="mt-8">
-                <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold text-gray-900">Student Feedback Form</h2>
-                    <p class="mt-4 text-sm text-gray-500">
+        <div class="p-4 sm:px-6 bg-white border-b border-gray-200">
+            <div class="mt-4">
+                <div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-900">Student Feedback Form</h2>
+                    <p class="mt-2 text-sm text-gray-500">
                         Your feedback is valuable and will help us improve the quality of education.
                     </p>
                 </div>
 
-                <!-- Instructions Section (Collapsible) -->
-                <div class="mb-8 bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
-                    <button type="button" onclick="toggleInstructions()" 
-                            class="w-full px-6 py-4 flex items-center justify-between hover:bg-blue-100 transition">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span class="text-lg font-semibold text-blue-900">How to Fill This Form</span>
-                        </div>
-                        <svg id="instructionsChevron" class="w-5 h-5 text-blue-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
+                <!-- Progress Bar -->
+                @if(isset($totalAssignments) && $totalAssignments > 0)
+                    @php
+                        $progressPercentage = round(($completedAssignments / $totalAssignments) * 100);
+                        $progressColor = $progressPercentage >= 75 ? 'bg-green-500' : ($progressPercentage >= 50 ? 'bg-blue-500' : ($progressPercentage >= 25 ? 'bg-yellow-500' : 'bg-red-500'));
+                        $progressTextColor = $progressPercentage >= 75 ? 'text-green-600' : ($progressPercentage >= 50 ? 'text-blue-600' : ($progressPercentage >= 25 ? 'text-yellow-600' : 'text-red-600'));
+                    @endphp
                     
-                    <div id="instructionsContent" class="hidden px-6 py-4 bg-white border-t border-blue-200">
-                        <div class="space-y-4 text-sm text-gray-700">
-                            <div class="flex items-start">
-                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <div class="mb-6 bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 border-2 border-indigo-300 rounded-lg p-4 shadow-md">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div>
+                                    <h3 class="text-sm font-bold text-gray-800">Your Progress</h3>
+                                    <p class="text-xs text-gray-600">{{ $completedAssignments }} of {{ $totalAssignments }} forms completed</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-extrabold {{ $progressTextColor }}">{{ $progressPercentage }}%</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="relative mb-3">
+                            <div class="overflow-hidden h-3 text-xs flex rounded-full bg-gray-300 shadow-inner border border-gray-400">
+                                <div 
+                                    style="width: {{ $progressPercentage }}%;" 
+                                    class="shadow-sm flex flex-col text-center whitespace-nowrap text-white justify-center {{ $progressColor }} transition-all duration-700 ease-out"
+                                ></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Mini Stats -->
+                        <div class="flex justify-between text-xs">
+                            <span class="text-green-700 font-semibold">
+                                <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                 </svg>
-                                <div>
-                                    <p class="font-semibold text-gray-900 mb-1">Answer All Rating Questions</p>
-                                    <p>Please provide a rating for each question using the 5-point scale (Strongly Agree to Strongly Disagree).</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-start">
-                                <svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                {{ $completedAssignments }} Completed
+                            </span>
+                            <span class="text-red-700 font-semibold">
+                                <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
                                 </svg>
-                                <div>
-                                    <p class="font-semibold text-gray-900 mb-1">Strongly Disagree Requires Reasoning</p>
-                                    <p>When you select <span class="font-medium text-red-600">"Strongly Disagree"</span>, a text box will appear. You <span class="font-medium">must</span> provide an explanation for your rating before you can submit the form.</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-start">
-                                <svg class="w-5 h-5 text-amber-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                </svg>
-                                <div>
-                                    <p class="font-semibold text-gray-900 mb-1">No Editing After Submission</p>
-                                    <p>Once you submit this feedback, you <span class="font-medium">cannot edit</span> your responses. Please review your answers carefully before submitting.</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-start">
-                                <svg class="w-5 h-5 text-purple-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                </svg>
-                                <div>
-                                    <p class="font-semibold text-gray-900 mb-1">Be Honest & Constructive</p>
-                                    <p>Your responses are confidential and will be used to improve the course. Please be honest and provide constructive feedback.</p>
-                                </div>
-                            </div>
+                                {{ $pendingAssignments }} Remaining
+                            </span>
                         </div>
                     </div>
-                </div>
+                @endif
 
                 <!-- Error Messages -->
                 @if(session('error'))
@@ -132,7 +155,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('forms.submit', $formName ?? 'student-feedback-form') }}" class="space-y-8" id="studentFeedbackForm">
+                <form method="POST" action="{{ route('forms.submit', $formName ?? 'student-feedback-form') }}" class="space-y-5" id="studentFeedbackForm">
                     @csrf
                     
                     <!-- Hidden field for assignment -->
@@ -142,9 +165,9 @@
 
                     <!-- Teacher Selection (for multi-teacher forms) -->
                     @if(isset($allAssignments) && $allAssignments->count() > 1)
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Select Subject and Teacher</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Select Subject and Teacher</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Subject Dropdown -->
                                 <div>
                                     <label for="subject_select" class="block text-sm font-medium text-gray-700 mb-2">
@@ -240,10 +263,10 @@
                     @endif
 
                     <!-- Section 1: Your experience as a student in this course -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Your experience as a student in this course</h3>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Your experience as a student in this course</h3>
                         
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             @php
                             $section1Questions = [
                                 ['field' => 'prepare_for_class', 'label' => 'I prepare for class lectures.'],
@@ -265,7 +288,7 @@
                             </div>
 
                             @foreach($section1Questions as $index => $question)
-                            <div class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+                            <div class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
                                 <div class="flex flex-row items-center justify-between gap-6">
                                     <!-- Question Text (LEFT) -->
                                     <div class="w-1/2">
@@ -299,8 +322,7 @@
                                     <textarea name="responses[{{ $question['field'] }}][reasoning]" 
                                               id="reasoning_text_{{ $question['field'] }}"
                                               rows="4"
-                                              style="min-height: 100px;"
-                                              class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white"
+                                              class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:outline-none focus:border-indigo-500 bg-white resize-none box-border"
                                               placeholder="Explain your rating..."></textarea>
                                     <p id="error_msg_{{ $question['field'] }}" class="mt-2 text-sm text-red-600 font-medium hidden">
                                         <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -315,10 +337,10 @@
                     </div>
 
                     <!-- Section 2: Your experience with the instructor of this course -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Your experience with the instructor of this course</h3>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Your experience with the instructor of this course</h3>
                         
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             @php
                             $section2Questions = [
                                 ['field' => 'instructor_approachable', 'label' => 'The instructor is approachable/Instructor makes himself/herself available to students in and out of the class.'],
@@ -343,7 +365,7 @@
                             </div>
 
                             @foreach($section2Questions as $index => $question)
-                            <div class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+                            <div class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
                                 <div class="flex flex-row items-center justify-between gap-6">
                                     <!-- Question Text (LEFT) -->
                                     <div class="w-1/2">
@@ -377,8 +399,7 @@
                                     <textarea name="responses[{{ $question['field'] }}][reasoning]" 
                                               id="reasoning_text_{{ $question['field'] }}"
                                               rows="4"
-                                              style="min-height: 100px;"
-                                              class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white"
+                                              class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:outline-none focus:border-indigo-500 bg-white resize-none box-border"
                                               placeholder="Explain your rating..."></textarea>
                                     <p id="error_msg_{{ $question['field'] }}" class="mt-2 text-sm text-red-600 font-medium hidden">
                                         <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -393,10 +414,10 @@
                     </div>
 
                     <!-- Section 3: Course content -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Course content</h3>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Course content</h3>
                         
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             @php
                             $section3Questions = [
                                 ['field' => 'learning_objectives_clear', 'label' => 'Learning objectives were clear.'],
@@ -420,7 +441,7 @@
                             </div>
 
                             @foreach($section3Questions as $index => $question)
-                            <div class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+                            <div class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
                                 <div class="flex flex-row items-center justify-between gap-6">
                                     <!-- Question Text (LEFT) -->
                                     <div class="w-1/2">
@@ -454,8 +475,7 @@
                                     <textarea name="responses[{{ $question['field'] }}][reasoning]" 
                                               id="reasoning_text_{{ $question['field'] }}"
                                               rows="4"
-                                              style="min-height: 100px;"
-                                              class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white"
+                                              class="w-full px-4 py-3 border-2 border-gray-400 rounded-lg focus:outline-none focus:border-indigo-500 bg-white resize-none box-border"
                                               placeholder="Explain your rating..."></textarea>
                                     <p id="error_msg_{{ $question['field'] }}" class="mt-2 text-sm text-red-600 font-medium hidden">
                                         <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -470,10 +490,10 @@
                     </div>
 
                     <!-- Section 4: Open-ended Questions -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Additional Feedback</h3>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Additional Feedback</h3>
                         
-                        <div class="space-y-6">
+                        <div class="space-y-4">
                             <!-- Question 1 -->
                             <div>
                                 <label class="block text-base font-medium text-gray-800 mb-2">
@@ -516,7 +536,7 @@
                     </div>
 
                     <!-- Submit Button -->
-                    <div class="flex items-center justify-end gap-3 pt-6 border-t">
+                    <div class="flex items-center justify-end gap-3 pt-4 border-t">
                         <a href="{{ route('forms.index') }}" 
                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition text-sm">
                             Cancel
@@ -532,7 +552,7 @@
     </div>
 </div>
 
-<div class="h-20"></div>
+<div class="h-8"></div>
 
 <script>
 // Toggle instructions section with animation
@@ -1208,3 +1228,13 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 
 @endsection
+
+
+
+
+
+
+
+
+
+

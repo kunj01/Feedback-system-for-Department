@@ -39,8 +39,11 @@ class SubjectController extends Controller
             'code' => 'required|string|max:50|unique:subjects,code',
             'semester' => 'required|integer|min:1|max:12',
             'description' => 'nullable|string',
+            'has_lab' => 'nullable|boolean',
             'teacher_ids' => 'nullable|array',
             'teacher_ids.*' => 'exists:teachers,id',
+            'lab_teacher_ids' => 'nullable|array',
+            'lab_teacher_ids.*' => 'exists:teachers,id',
         ]);
 
         if ($validator->fails()) {
@@ -58,16 +61,22 @@ class SubjectController extends Controller
             'code' => $request->code,
             'semester' => $request->semester,
             'description' => $request->description,
+            'has_lab' => $request->has('has_lab') ? $request->has_lab : false,
             'sort_order' => $maxSortOrder + 1,
             'is_active' => true,
         ]);
 
-        // Attach teachers if provided
+        // Attach theory teachers if provided
         if ($request->has('teacher_ids') && is_array($request->teacher_ids)) {
             $subject->teachers()->attach($request->teacher_ids);
         }
 
-        $subject->load('teachers');
+        // Attach lab teachers if provided
+        if ($request->has('lab_teacher_ids') && is_array($request->lab_teacher_ids)) {
+            $subject->labTeachers()->attach($request->lab_teacher_ids);
+        }
+
+        $subject->load(['teachers', 'labTeachers']);
 
         return response()->json([
             'success' => true,
@@ -86,8 +95,11 @@ class SubjectController extends Controller
             'code' => 'required|string|max:50|unique:subjects,code,' . $subject->id,
             'semester' => 'required|integer|min:1|max:12',
             'description' => 'nullable|string',
+            'has_lab' => 'nullable|boolean',
             'teacher_ids' => 'nullable|array',
             'teacher_ids.*' => 'exists:teachers,id',
+            'lab_teacher_ids' => 'nullable|array',
+            'lab_teacher_ids.*' => 'exists:teachers,id',
         ]);
 
         if ($validator->fails()) {
@@ -102,14 +114,20 @@ class SubjectController extends Controller
             'code' => $request->code,
             'semester' => $request->semester,
             'description' => $request->description,
+            'has_lab' => $request->has('has_lab') ? $request->has_lab : false,
         ]);
 
-        // Sync teachers
+        // Sync theory teachers
         if ($request->has('teacher_ids')) {
             $subject->teachers()->sync($request->teacher_ids ?? []);
         }
 
-        $subject->load('teachers');
+        // Sync lab teachers
+        if ($request->has('lab_teacher_ids')) {
+            $subject->labTeachers()->sync($request->lab_teacher_ids ?? []);
+        }
+
+        $subject->load(['teachers', 'labTeachers']);
 
         return response()->json([
             'success' => true,

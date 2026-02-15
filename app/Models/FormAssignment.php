@@ -22,6 +22,7 @@ class FormAssignment extends Model
         'is_multi_teacher',
         'subject_id',
         'teacher_id',
+        'is_lab',
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class FormAssignment extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'is_multi_teacher' => 'boolean',
+        'is_lab' => 'boolean',
     ];
 
     /**

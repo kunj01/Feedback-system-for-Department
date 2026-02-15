@@ -28,37 +28,6 @@
         </div>
     </div>
 
-    <!-- Profile Information -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Profile Information</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Name</label>
-                <p class="mt-1 text-gray-900">{{ auth()->user()->name }}</p>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Email</label>
-                <p class="mt-1 text-gray-900">{{ auth()->user()->email }}</p>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Phone</label>
-                <p class="mt-1 text-gray-900">{{ auth()->user()->phone ?? 'Not provided' }}</p>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Department</label>
-                <p class="mt-1 text-gray-900">{{ auth()->user()->department->name ?? 'Not assigned' }}</p>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Role</label>
-                <p class="mt-1 text-gray-900">{{ auth()->user()->getRoleNames()->implode(', ') }}</p>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Member Since</label>
-                <p class="mt-1 text-gray-900">{{ auth()->user()->created_at->format('F d, Y') }}</p>
-            </div>
-        </div>
-    </div>
-
     <!-- Change Password -->
     <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Change Password</h3>

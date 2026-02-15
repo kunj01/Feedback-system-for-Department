@@ -97,9 +97,10 @@
 
 <!-- Add/Edit Subject Modal -->
 <div id="subjectModal" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4 transition-all duration-300 backdrop-blur-lg" onclick="if(event.target === this) closeSubjectModal()" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-auto max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-6">
-            <h3 id="subjectModalTitle" class="text-2xl font-bold text-gray-900">Add New Subject</h3>
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto max-h-[75vh] flex flex-col" onclick="event.stopPropagation()">
+        <!-- Modal Header (Fixed) -->
+        <div class="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
+            <h3 id="subjectModalTitle" class="text-xl font-bold text-gray-900">Add New Subject</h3>
             <button onclick="closeSubjectModal()" class="text-gray-400 hover:text-gray-600 transition-colors hover:rotate-90 hover:scale-110">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -107,23 +108,25 @@
             </button>
         </div>
         
+        <!-- Modal Content (Scrollable) -->
+        <div class="overflow-y-auto flex-1 px-6 py-4">
         <form id="subjectForm" onsubmit="saveSubject(event)">
             <input type="hidden" id="subjectId" name="subject_id">
             
-            <div class="space-y-5">
+            <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject Name *</label>
-                    <input type="text" id="subjectName" name="name" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="e.g., Data Structures and Algorithms">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subject Name *</label>
+                    <input type="text" id="subjectName" name="name" required class="form-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="e.g., Data Structures and Algorithms">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject Code *</label>
-                    <input type="text" id="subjectCode" name="code" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="e.g., CS201">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subject Code *</label>
+                    <input type="text" id="subjectCode" name="code" required class="form-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="e.g., CS201">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Semester *</label>
-                    <select id="subjectSemester" name="semester" required class="form-select w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Semester *</label>
+                    <select id="subjectSemester" name="semester" required class="form-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
                         @for($i = 1; $i <= 8; $i++)
                             <option value="{{ $i }}">Semester {{ $i }}</option>
                         @endfor
@@ -131,22 +134,34 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea id="subjectDescription" name="description" rows="3" class="form-textarea w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Enter subject description (optional)"></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="subjectDescription" name="description" rows="2" class="form-textarea w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="Enter subject description (optional)"></textarea>
+                </div>
+
+                <!-- Has Lab Toggle -->
+                <div class="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <div>
+                        <label class="text-sm font-medium text-gray-900">Has Lab Sessions</label>
+                        <p class="text-xs text-gray-600 mt-1">Enable if this subject includes laboratory sessions</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="subjectHasLab" name="has_lab" class="sr-only peer" onchange="toggleLabTeachers()">
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Assign Teachers</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assign Theory Teachers</label>
                     <div class="relative" x-data="{ open: false, search: '', selected: [] }">
-                        <div @click="open = !open" class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg cursor-pointer flex items-center justify-between">
-                            <span x-show="selected.length === 0" class="text-gray-400">Select teachers...</span>
+                        <div @click="open = !open" class="form-input w-full px-3 py-2 border border-gray-300 rounded-lg cursor-pointer flex items-center justify-between text-sm">
+                            <span x-show="selected.length === 0" class="text-gray-400">Select theory teachers...</span>
                             <span x-show="selected.length > 0" x-text="selected.length + ' teacher(s) selected'" class="text-gray-700"></span>
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
                         
-                        <div x-show="open" @click.away="open = false" class="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        <div x-show="open" @click.away="open = false" class="absolute z-30 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                             <div class="p-3 border-b">
                                 <input x-model="search" type="text" placeholder="Search teachers..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                             </div>
@@ -163,22 +178,61 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Select one or more teachers to assign to this subject</p>
+                    <p class="text-xs text-gray-500 mt-1">Select one or more teachers for theory lectures</p>
+                </div>
+
+                <!-- Lab Teachers Section (shown only when has_lab is enabled) -->
+                <div id="labTeachersSection" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"></path>
+                        </svg>
+                        Assign Lab Teachers
+                    </label>
+                    <div class="relative" x-data="{ open: false, search: '', selected: [] }">
+                        <div @click="open = !open" class="form-input w-full px-3 py-2 border border-indigo-300 bg-indigo-50 rounded-lg cursor-pointer flex items-center justify-between text-sm">
+                            <span x-show="selected.length === 0" class="text-gray-400">Select lab teachers...</span>
+                            <span x-show="selected.length > 0" x-text="selected.length + ' teacher(s) selected'" class="text-gray-700"></span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        
+                        <div x-show="open" @click.away="open = false" class="absolute z-30 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                            <div class="p-3 border-b">
+                                <input x-model="search" type="text" placeholder="Search teachers..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <div id="labTeachersList" class="p-2">
+                                @foreach($teachers as $teacher)
+                                <label class="flex items-center p-3 hover:bg-indigo-50 rounded cursor-pointer transition">
+                                    <input type="checkbox" name="lab_teacher_ids[]" value="{{ $teacher->id }}" class="lab-teacher-checkbox w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">{{ $teacher->name }}</p>
+                                        <p class="text-xs text-gray-500">{{ $teacher->email }}</p>
+                                    </div>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Select one or more teachers for laboratory sessions</p>
                 </div>
             </div>
-
-            <div class="flex justify-end space-x-3 mt-8 pt-6 border-t">
-                <button type="button" onclick="closeSubjectModal()" class="btn-secondary">
-                    Cancel
-                </button>
-                <button type="submit" class="btn-primary">
-                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Save Subject
-                </button>
-            </div>
         </form>
+        </div>
+        
+        <!-- Modal Footer (Fixed) -->
+        <div class="flex justify-end space-x-3 px-6 py-4 border-t bg-gray-50 rounded-b-2xl flex-shrink-0">
+            <button type="button" onclick="closeSubjectModal()" class="btn-secondary">
+                Cancel
+            </button>
+            <button type="submit" form="subjectForm" class="btn-primary">
+                <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Save Subject
+            </button>
+        </div>
     </div>
 </div>
 
@@ -288,6 +342,20 @@ function openEditSubjectModal(subject) {
 
 function closeSubjectModal() {
     document.getElementById('subjectModal').classList.add('hidden');
+}
+
+// Toggle Lab Teachers Section
+function toggleLabTeachers() {
+    const hasLab = document.getElementById('subjectHasLab').checked;
+    const labSection = document.getElementById('labTeachersSection');
+    
+    if (hasLab) {
+        labSection.classList.remove('hidden');
+    } else {
+        labSection.classList.add('hidden');
+        // Uncheck all lab teacher checkboxes
+        document.querySelectorAll('.lab-teacher-checkbox').forEach(cb => cb.checked = false);
+    }
 }
 
 // Load Subjects

@@ -230,11 +230,19 @@ class FormController extends Controller
 
         // Check if this is the Student Feedback form
         if (stripos($filename, 'Student-Feedback') !== false || stripos($filename, 'student-feedback') !== false) {
+            // Calculate progress for this student
+            $totalAssignments = FormAssignment::where('student_id', $student->id)->count();
+            $completedAssignments = FormAssignment::where('student_id', $student->id)->where('status', 'completed')->count();
+            $pendingAssignments = FormAssignment::where('student_id', $student->id)->where('status', 'pending')->count();
+            
             return view('student.forms.student-feedback-form', [
                 'formTitle' => $formTitle,
                 'formName' => $filename,
                 'assignment' => $assignment,
                 'allAssignments' => $allAssignments,
+                'totalAssignments' => $totalAssignments,
+                'completedAssignments' => $completedAssignments,
+                'pendingAssignments' => $pendingAssignments,
             ]);
         }
 
@@ -385,7 +393,7 @@ class FormController extends Controller
                     'assignment_id' => $assignment->id,
                     'response_id' => $existingResponse->id
                 ]);
-                return redirect()->route('forms.index')
+                return redirect()->route('forms.show', $filename)
                     ->with('info', 'You have already submitted this form for this teacher.');
             }
 
@@ -396,7 +404,7 @@ class FormController extends Controller
                     'start_date' => $assignment->start_date,
                     'end_date' => $assignment->end_date
                 ]);
-                return redirect()->route('forms.index')
+                return redirect()->route('forms.show', $filename)
                     ->with('error', 'The submission period for this form has ended.');
             }
 
@@ -562,8 +570,9 @@ class FormController extends Controller
 
                 \Log::info('✓✓✓ FORM SUBMISSION COMPLETED SUCCESSFULLY ✓✓✓');
 
-                return redirect()->route('forms.index')
-                    ->with('success', 'Thank you! Your form has been submitted successfully.');
+                // Redirect back to the same form page to update progress bar
+                return redirect()->route('forms.show', $filename)
+                    ->with('success', 'Thank you! Your form has been submitted successfully. Progress updated.');
 
             } catch (\Exception $e) {
                 \DB::rollback();

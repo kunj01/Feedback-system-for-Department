@@ -192,6 +192,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/analytics', [App\Http\Controllers\Admin\StudentFeedbackController::class, 'analytics'])->name('analytics');
         Route::get('/analysis', [App\Http\Controllers\Admin\StudentFeedbackController::class, 'analysisReport'])->name('analysis');
         Route::get('/analysis/export-pdf', [App\Http\Controllers\Admin\StudentFeedbackController::class, 'exportAnalysisPdf'])->name('analysis.export-pdf');
+        Route::get('/disagree-responses', [App\Http\Controllers\Admin\StudentFeedbackController::class, 'disagreeResponses'])->name('disagree');
+        Route::get('/all-comments', [App\Http\Controllers\Admin\StudentFeedbackController::class, 'allComments'])->name('comments');
         Route::get('/{id}', [App\Http\Controllers\Admin\StudentFeedbackController::class, 'show'])->name('show');
         Route::delete('/{id}', [App\Http\Controllers\Admin\StudentFeedbackController::class, 'destroy'])->name('destroy');
     });
@@ -201,6 +203,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\TeacherReportController::class, 'index'])->name('index');
         Route::get('/{teacherId}/report', [App\Http\Controllers\Admin\TeacherReportController::class, 'show'])->name('show');
         Route::get('/{teacherId}/export-pdf', [App\Http\Controllers\Admin\TeacherReportController::class, 'exportPdf'])->name('export-pdf');
+    });
+
+    // Admin Subject Analysis Routes
+    Route::prefix('admin/subject-analysis')->name('admin.subject-analysis.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\SubjectAnalysisController::class, 'index'])->name('index');
+        Route::get('/{id}', [App\Http\Controllers\Admin\SubjectAnalysisController::class, 'show'])->name('show');
+        Route::get('/{id}/export-pdf', [App\Http\Controllers\Admin\SubjectAnalysisController::class, 'exportPdf'])->name('export-pdf');
     });
 
     // Debug route for testing feedback

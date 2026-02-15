@@ -16,10 +16,12 @@ class Subject extends Model
         'sort_order',
         'description',
         'is_active',
+        'has_lab',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'has_lab' => 'boolean',
         'semester' => 'integer',
         'sort_order' => 'integer',
     ];
@@ -30,6 +32,15 @@ class Subject extends Model
     public function teachers()
     {
         return $this->belongsToMany(Teacher::class, 'subject_teacher')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all lab teachers assigned to this subject
+     */
+    public function labTeachers()
+    {
+        return $this->belongsToMany(Teacher::class, 'subject_lab_teacher')
             ->withTimestamps();
     }
 

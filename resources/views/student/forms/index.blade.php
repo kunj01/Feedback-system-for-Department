@@ -24,7 +24,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-600">Total Feedback</p>
+                    <p class="text-sm text-gray-600">Total Submissions Required</p>
                     <p class="text-2xl font-bold text-gray-800">{{ $assignments->count() }}</p>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-600">Pending</p>
+                    <p class="text-sm text-gray-600">Remaining to Submit</p>
                     <p class="text-2xl font-bold text-gray-800">{{ $assignments->where('status', 'pending')->count() }}</p>
                 </div>
             </div>

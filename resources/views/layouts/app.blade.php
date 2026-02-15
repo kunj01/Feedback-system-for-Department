@@ -17,9 +17,10 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans antialiased" x-data="{ sidebarOpen: true }">
+<body class="bg-gray-100 font-sans antialiased" x-data="{ sidebarOpen: {{ auth()->user() && !auth()->user()->hasRole('Student') ? 'true' : 'false' }}, studentMenuOpen: false }">
     
-    <!-- Fixed Sidebar -->
+    <!-- Fixed Sidebar (Hidden for Students) -->
+    @if(auth()->user() && !auth()->user()->hasRole('Student'))
     <aside class="fixed top-0 left-0 h-screen w-64 bg-white shadow-xl z-50 overflow-y-auto"
            x-show="sidebarOpen"
            x-transition:enter="transition ease-out duration-500 transform"
@@ -142,11 +143,32 @@
                             Student Feedback
                         </a>
 
+                        <a href="{{ route('admin.student-feedback.disagree') }}" class="{{ request()->routeIs('admin.student-feedback.disagree') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            Disagree Responses
+                        </a>
+
+                        <a href="{{ route('admin.student-feedback.comments') }}" class="{{ request()->routeIs('admin.student-feedback.comments') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                            </svg>
+                            All Comments
+                        </a>
+
                         <a href="{{ route('admin.student-feedback.analysis') }}" class="{{ request()->routeIs('admin.student-feedback.analysis*') ? 'sidebar-link-active' : 'sidebar-link' }}">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00 2-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                             </svg>
                             Student Feedback Analysis
+                        </a>
+
+                        <a href="{{ route('admin.subject-analysis.index') }}" class="{{ request()->routeIs('admin.subject-analysis.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00 2-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            Subject Analysis
                         </a>
 
                         <a href="{{ route('admin.teacher-reports.index') }}" class="{{ request()->routeIs('admin.teacher-reports.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
@@ -180,32 +202,73 @@
             @endauth
         </nav>
     </aside>
+    @endif
 
     <!-- Main Content Wrapper - Pushes over when sidebar is open -->
     <div class="transition-all duration-500 ease-in-out"
-         :class="{ 'ml-64': sidebarOpen, 'ml-0': !sidebarOpen }">
+         :class="{ 'ml-64': sidebarOpen && {{ auth()->user() && !auth()->user()->hasRole('Student') ? 'true' : 'false' }}, 'ml-0': !sidebarOpen || {{ auth()->user() && auth()->user()->hasRole('Student') ? 'true' : 'false' }} }">
         
         <!-- Top Header Bar -->
         <header class="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-200">
             <div class="flex items-center justify-between px-6 py-3">
-                <!-- Hamburger Menu Button -->
-                <button @click="sidebarOpen = !sidebarOpen" 
-                        class="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
-                        aria-label="Toggle sidebar">
-                    <svg class="w-6 h-6 text-gray-700 transition-all duration-500 ease-in-out"
-                         :class="{ 'rotate-90': !sidebarOpen }"
-                         fill="none" 
-                         stroke="currentColor" 
-                         viewBox="0 0 24 24">
-                        <path stroke-linecap="round" 
-                              stroke-linejoin="round" 
-                              stroke-width="2" 
-                              d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
-                
-                <div class="flex-1 ml-4">
-                    <h2 class="text-xl font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h2>
+                <div class="flex items-center flex-1">
+                    <!-- Hamburger Menu Button -->
+                    @if(auth()->user() && !auth()->user()->hasRole('Student'))
+                        <button @click="sidebarOpen = !sidebarOpen" 
+                                class="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0 mr-4"
+                                aria-label="Toggle sidebar">
+                            <svg class="w-6 h-6 text-gray-700 transition-all duration-500 ease-in-out"
+                                 :class="{ 'rotate-90': !sidebarOpen }"
+                                 fill="none" 
+                                 stroke="currentColor" 
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" 
+                                      stroke-linejoin="round" 
+                                      stroke-width="2" 
+                                      d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                        </button>
+                    @else
+                        <!-- Student Menu Dropdown -->
+                        <div class="relative mr-4" x-data="{ open: false }">
+                            <button @click="open = !open" 
+                                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
+                                    aria-label="Menu">
+                                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                </svg>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div x-show="open"
+                                 @click.away="open = false"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                                 x-transition:leave-end="opacity-0 transform -translate-y-2"
+                                 class="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-50 border border-gray-200"
+                                 style="display: none;">
+                                <a href="{{ route('dashboard') }}" 
+                                   class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 {{ request()->routeIs('dashboard') ? 'bg-blue-50 text-blue-600 font-semibold' : '' }}">
+                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                    </svg>
+                                    Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                    
+                    <!-- Logo/Brand -->
+                    <div class="flex items-center">
+                        <span class="text-xl font-bold text-gray-800">SCFMS</span>
+                        <span class="mx-2 text-gray-400">|</span>
+                        <span class="text-sm text-gray-600">Course Feedback System</span>
+                        <span class="mx-2 text-gray-400 hidden md:inline">|</span>
+                        <span class="text-sm font-semibold text-gray-700 hidden md:inline">@yield('page-title', 'Dashboard')</span>
+                    </div>
                 </div>
 
                 <div class="flex items-center space-x-4">
@@ -291,7 +354,7 @@
         </header>
 
         <!-- Page Content -->
-        <main class="p-6 bg-gray-50 min-h-screen">
+        <main class="p-4 bg-gray-50">
             <!-- Flash Messages -->
             @if(session('success') && !request()->routeIs('admin.speakers.*'))
                 <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
@@ -309,8 +372,8 @@
         </main>
 
         <!-- Footer -->
-        <footer class="bg-white border-t py-4 px-6">
-            <div class="text-center text-sm text-gray-600">
+        <footer class="bg-white border-t py-3 px-6">
+            <div class="text-center text-xs text-gray-600">
                 &copy; {{ date('Y') }} Semester-wise Course Feedback Management System (SCFMS). All rights reserved.
             </div>
         </footer>

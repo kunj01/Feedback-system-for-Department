@@ -537,4 +537,216 @@ class StudentFeedbackController extends Controller
 
         return $recommendations;
     }
+
+    /**
+     * All question labels mapped by field name
+     */
+    private function getQuestionLabels()
+    {
+        return [
+            // Section 1: Student experience
+            'prepare_for_class' => 'I prepare for class lectures.',
+            'ask_questions_freely' => 'I am able to ask questions freely during class.',
+            'actively_participate' => 'I actively participate in class.',
+            'feel_comfortable_sharing' => 'I feel comfortable sharing my ideas in this course.',
+            'developing_skills' => 'I am developing the skills I need in this class.',
+            // Section 2: Instructor experience
+            'instructor_approachable' => 'The instructor is approachable / available to students.',
+            'instructor_effective' => 'Instructor was an effective lecturer / demonstrates knowledge.',
+            'presentations_clear' => 'Presentations were clear and organized.',
+            'instructor_stimulated' => 'Instructor stimulated student interest / uses variety of methods.',
+            'instructor_used_time' => 'Instructor effectively used time during class.',
+            'instructor_introduces_concepts' => 'The way the instructor introduces new concepts was clear.',
+            'instructor_positive_environment' => 'The instructor creates a positive environment in class.',
+            'instructor_communicates' => 'The instructor clearly communicates course expectations.',
+            // Section 3: Course content
+            'learning_objectives_clear' => 'Learning objectives were clear.',
+            'content_organized' => 'Course content was organized and well presented.',
+            'opportunities_practice' => 'There are sufficient opportunities to practice.',
+            'access_materials' => 'Able to access all course materials.',
+            'content_prepares' => 'Course content prepares you for further studies or career.',
+            'teaching_assessments' => 'Teaching methods and assessments relate to learning objectives.',
+            'diverse_perspectives' => 'The course included diverse perspectives.',
+        ];
+    }
+
+    /**
+     * Display all feedback responses that contain Disagree or Strongly Disagree ratings
+     */
+    public function disagreeResponses(Request $request)
+    {
+        try {
+            $questionLabels = $this->getQuestionLabels();
+            $disagreeItems = collect();
+
+            $query = FormResponse::with(['student.user', 'formAssignment.teacher', 'formAssignment.subject'])
+                ->latest();
+
+            // Apply filters
+            if ($request->filled('subject_id')) {
+                $query->whereHas('formAssignment', function ($q) use ($request) {
+                    $q->where('subject_id', $request->subject_id);
+                });
+            }
+            if ($request->filled('teacher_id')) {
+                $query->whereHas('formAssignment', function ($q) use ($request) {
+                    $q->where('teacher_id', $request->teacher_id);
+                });
+            }
+
+            $responses = $query->get();
+
+            foreach ($responses as $response) {
+                $data = $response->responses;
+                if (!is_array($data)) continue;
+
+                foreach ($data as $field => $value) {
+                    if (!is_array($value) || !isset($value['rating'])) continue;
+
+                    $rating = $value['rating'];
+                    if (in_array($rating, ['Disagree', 'Strongly Disagree'])) {
+                        $disagreeItems->push([
+                            'response_id' => $response->id,
+                            'student_name' => optional(optional($response->student)->user)->name ?? $response->name ?? 'N/A',
+                            'student_email' => $response->email ?? optional(optional($response->student)->user)->email ?? 'N/A',
+                            'subject' => optional(optional($response->formAssignment)->subject)->name ?? 'N/A',
+                            'teacher' => optional(optional($response->formAssignment)->teacher)->name ?? 'N/A',
+                            'question' => $questionLabels[$field] ?? $field,
+                            'field' => $field,
+                            'rating' => $rating,
+                            'reasoning' => $value['reasoning'] ?? null,
+                            'submitted_at' => $response->created_at,
+                        ]);
+                    }
+                }
+            }
+
+            // Sort: Strongly Disagree first, then Disagree
+            $disagreeItems = $disagreeItems->sortBy(function ($item) {
+                return $item['rating'] === 'Strongly Disagree' ? 0 : 1;
+            })->values();
+
+            // Filter by rating type after collecting
+            if ($request->filled('rating_type') && $request->rating_type !== 'all') {
+                $disagreeItems = $disagreeItems->where('rating', $request->rating_type)->values();
+            }
+
+            // Stats
+            $stats = [
+                'total' => $disagreeItems->count(),
+                'strongly_disagree' => $disagreeItems->where('rating', 'Strongly Disagree')->count(),
+                'disagree' => $disagreeItems->where('rating', 'Disagree')->count(),
+                'with_reasoning' => $disagreeItems->whereNotNull('reasoning')->count(),
+            ];
+
+            $subjects = \App\Models\Subject::orderBy('name')->get();
+            $teachers = \App\Models\Teacher::orderBy('name')->get();
+
+            return view('admin.student-feedback.disagree', compact('disagreeItems', 'stats', 'subjects', 'teachers'));
+
+        } catch (\Exception $e) {
+            Log::error('Error loading disagree responses: ' . $e->getMessage());
+            return back()->with('error', 'Error loading disagree responses: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display all comments (open-ended feedback + reasoning texts)
+     */
+    public function allComments(Request $request)
+    {
+        try {
+            $questionLabels = $this->getQuestionLabels();
+            $comments = collect();
+
+            $openEndedFields = [
+                'most_useful' => 'What aspects of this course were most useful or valuable?',
+                'missing_topics' => 'Were there any topics you felt were missing or needed more emphasis?',
+                'improvement_suggestions' => 'Give your suggestion to improve this course',
+            ];
+
+            $query = FormResponse::with(['student.user', 'formAssignment.teacher', 'formAssignment.subject'])
+                ->latest();
+
+            // Apply filters
+            if ($request->filled('subject_id')) {
+                $query->whereHas('formAssignment', function ($q) use ($request) {
+                    $q->where('subject_id', $request->subject_id);
+                });
+            }
+            if ($request->filled('teacher_id')) {
+                $query->whereHas('formAssignment', function ($q) use ($request) {
+                    $q->where('teacher_id', $request->teacher_id);
+                });
+            }
+
+            $responses = $query->get();
+
+            foreach ($responses as $response) {
+                $data = $response->responses;
+                if (!is_array($data)) continue;
+
+                $studentName = optional(optional($response->student)->user)->name ?? $response->name ?? 'N/A';
+                $studentEmail = $response->email ?? optional(optional($response->student)->user)->email ?? 'N/A';
+                $subjectName = optional(optional($response->formAssignment)->subject)->name ?? 'N/A';
+                $teacherName = optional(optional($response->formAssignment)->teacher)->name ?? 'N/A';
+
+                // Open-ended text answers
+                foreach ($openEndedFields as $field => $label) {
+                    if (isset($data[$field]) && is_string($data[$field]) && strtolower(trim($data[$field])) !== 'na' && trim($data[$field]) !== '') {
+                        $comments->push([
+                            'response_id' => $response->id,
+                            'student_name' => $studentName,
+                            'student_email' => $studentEmail,
+                            'subject' => $subjectName,
+                            'teacher' => $teacherName,
+                            'type' => 'open_ended',
+                            'question' => $label,
+                            'comment' => $data[$field],
+                            'rating' => null,
+                            'submitted_at' => $response->created_at,
+                        ]);
+                    }
+                }
+
+                // Disagree reasoning texts
+                foreach ($data as $field => $value) {
+                    if (is_array($value) && isset($value['reasoning']) && trim($value['reasoning']) !== '') {
+                        $comments->push([
+                            'response_id' => $response->id,
+                            'student_name' => $studentName,
+                            'student_email' => $studentEmail,
+                            'subject' => $subjectName,
+                            'teacher' => $teacherName,
+                            'type' => 'reasoning',
+                            'question' => $questionLabels[$field] ?? $field,
+                            'comment' => $value['reasoning'],
+                            'rating' => $value['rating'] ?? null,
+                            'submitted_at' => $response->created_at,
+                        ]);
+                    }
+                }
+            }
+
+            // Filter by type
+            if ($request->filled('type') && $request->type !== 'all') {
+                $comments = $comments->where('type', $request->type)->values();
+            }
+
+            $stats = [
+                'total' => $comments->count(),
+                'open_ended' => $comments->where('type', 'open_ended')->count(),
+                'reasoning' => $comments->where('type', 'reasoning')->count(),
+            ];
+
+            $subjects = \App\Models\Subject::orderBy('name')->get();
+            $teachers = \App\Models\Teacher::orderBy('name')->get();
+
+            return view('admin.student-feedback.comments', compact('comments', 'stats', 'subjects', 'teachers'));
+
+        } catch (\Exception $e) {
+            Log::error('Error loading comments: ' . $e->getMessage());
+            return back()->with('error', 'Error loading comments: ' . $e->getMessage());
+        }
+    }
 }
