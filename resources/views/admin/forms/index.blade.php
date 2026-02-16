@@ -4,8 +4,8 @@
 @section('page-title', 'Forms Management')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex justify-between items-center mb-8">
         <h2 class="text-2xl font-bold text-gray-800">Forms & Documents</h2>
         <div class="flex gap-3">
             <button onclick="document.getElementById('help-modal').classList.toggle('hidden')" class="btn-secondary">
@@ -122,7 +122,7 @@
     </div>
 
     @if(session('success'))
-        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
+        <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
@@ -131,7 +131,7 @@
     @endif
 
     @if(session('error'))
-        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
+        <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -140,14 +140,11 @@
     @endif
 
     <!-- Search Bar -->
-    <div class="card mb-6">
+    <div class="card mb-8 p-6">
         <form method="GET" action="{{ route('forms.index') }}" class="flex space-x-4">
             <div class="flex-1">
                 <div class="relative">
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Search forms by name..." class="input-field pl-10">
-                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Search forms by name..." class="input-field w-full">
                 </div>
             </div>
             <button type="submit" class="btn-primary">
@@ -163,8 +160,8 @@
     </div>
 
     <!-- Stats Card -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-        <div class="bg-white rounded-lg shadow-md p-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-xs">Total Forms</p>
@@ -179,7 +176,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-xs">Word Documents</p>
@@ -193,7 +190,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-600 text-xs">PDF Documents</p>
@@ -213,11 +210,11 @@
 
     <!-- Forms List -->
     @if(count($forms) > 0)
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($forms as $form)
-                <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition duration-200 p-3">
+                <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition duration-200 p-5">
                     <!-- File Icon & Type Badge -->
-                    <div class="flex items-start justify-between mb-2">
+                    <div class="flex items-start justify-between mb-4">
                         <div class="bg-{{ $form['color'] }}-100 p-2 rounded-lg">
                             <svg class="w-6 h-6 text-{{ $form['color'] }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $form['icon'] }}"></path>
@@ -229,12 +226,12 @@
                     </div>
 
                     <!-- File Name -->
-                    <h3 class="text-sm font-semibold text-gray-800 mb-1.5 truncate" title="{{ $form['display_name'] }}">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-3 truncate" title="{{ $form['display_name'] }}">
                         {{ $form['display_name'] }}
                     </h3>
 
                     <!-- File Info -->
-                    <div class="space-y-1 text-xs text-gray-600 mb-2">
+                    <div class="space-y-2 text-xs text-gray-600 mb-4">
                         <div class="flex items-center">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
@@ -250,7 +247,7 @@
                     </div>
 
                     <!-- Assignment Stats -->
-                    <div class="mb-2 p-1.5 bg-gray-50 rounded-lg">
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
                         <div class="grid grid-cols-3 gap-1 text-center text-xs">
                             <div>
                                 <p class="text-gray-600 text-xs">Assigned</p>
@@ -268,7 +265,7 @@
                     </div>
 
                     <!-- Actions -->
-                    <div class="flex space-x-1.5 border-t pt-2.5">
+                    <div class="flex space-x-2 border-t pt-4">
                         <a href="{{ route('forms.show', $form['name']) }}" class="btn-primary flex-1 text-center text-xs py-1.5">
                             <svg class="w-3.5 h-3.5 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>

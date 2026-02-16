@@ -157,6 +157,12 @@ class FormController extends Controller
                 ->with('student.user', 'subject', 'teacher')
                 ->get();
 
+            // Add assignment count to each student for this form
+            $students = $students->map(function($student) use ($assignments) {
+                $student->assignment_count = $assignments->where('student_id', $student->id)->count();
+                return $student;
+            });
+
             // Get active subjects with their teachers (ordered by semester and sort_order)
             $subjects = \App\Models\Subject::where('is_active', true)
                 ->with('teachers')
@@ -344,42 +350,67 @@ class FormController extends Controller
                 $query->with('division');
             }])->findOrFail($teacherId);
 
-            // For each student, find their batch in teacher's assignments and create form assignment
+            // Check if teacher has any batch assignments
+            if ($teacher->batches->isEmpty()) {
+                return redirect()->route('forms.show', $filename)
+                    ->with('error', "Teacher {$teacher->name} has no batch assignments. Cannot assign feedback forms.");
+            }
+
+            // For each student, create form assignment
             foreach ($students as $student) {
-                if (!$student->batch_id) {
-                    continue; // Skip students without batch assignment
+                // Try to find if teacher teaches this student's batch (preferred match)
+                $teacherBatch = null;
+                $subjectId = null;
+                $isLab = false;
+
+                if ($student->batch_id) {
+                    $teacherBatch = $teacher->batches->firstWhere('id', $student->batch_id);
                 }
 
-                // Find if this teacher teaches this student's batch
-                $teacherBatch = $teacher->batches->firstWhere('id', $student->batch_id);
-                
                 if ($teacherBatch) {
-                    // Teacher teaches this student's batch
+                    // Perfect match: Teacher teaches this student's batch
                     $pivotData = $teacherBatch->pivot;
                     $subjectId = $pivotData->subject_id;
+                    $isLab = $pivotData->type === 'lab';
+                } else {
+                    // No batch match: Use first available subject from teacher's assignments
+                    // This allows flexible assignment for students in different batches
+                    $firstBatch = $teacher->batches->first();
+                    if ($firstBatch) {
+                        $pivotData = $firstBatch->pivot;
+                        $subjectId = $pivotData->subject_id;
+                        $isLab = $pivotData->type === 'lab';
+                    }
+                }
 
-                    // Create assignment
-                    $assignment = FormAssignment::firstOrCreate(
-                        [
+                // Create assignment if we have a subject
+                if ($subjectId) {
+                    // Check if this exact assignment already exists
+                    $existingAssignment = FormAssignment::where('form_name', $filename)
+                        ->where('student_id', $student->id)
+                        ->where('subject_id', $subjectId)
+                        ->where('teacher_id', $teacher->id)
+                        ->first();
+
+                    if (!$existingAssignment) {
+                        // Create new assignment
+                        FormAssignment::create([
                             'form_name' => $filename,
                             'student_id' => $student->id,
                             'subject_id' => $subjectId,
                             'teacher_id' => $teacher->id,
-                        ],
-                        [
                             'form_title' => $formTitle,
                             'assigned_by' => auth()->id(),
                             'start_date' => $request->start_date,
                             'end_date' => $request->end_date,
                             'grace_period_hours' => $request->grace_period_hours ?? 0,
                             'is_multi_teacher' => true,
-                            'is_lab' => $pivotData->type === 'lab',
-                        ]
-                    );
+                            'is_lab' => $isLab,
+                        ]);
 
-                    if ($assignment->wasRecentlyCreated) {
                         $assignedCount++;
                     }
+                    // If assignment exists, skip silently (allows reassignment to different teachers)
                 }
             }
 
@@ -417,15 +448,20 @@ class FormController extends Controller
                         $pivotData = $teacherBatch->pivot;
                         $subjectId = $pivotData->subject_id;
 
-                        // Create assignment
-                        $assignment = FormAssignment::firstOrCreate(
-                            [
+                        // Check if this exact assignment already exists
+                        $existingAssignment = FormAssignment::where('form_name', $filename)
+                            ->where('student_id', $student->id)
+                            ->where('subject_id', $subjectId)
+                            ->where('teacher_id', $teacher->id)
+                            ->first();
+
+                        if (!$existingAssignment) {
+                            // Create new assignment
+                            FormAssignment::create([
                                 'form_name' => $filename,
                                 'student_id' => $student->id,
                                 'subject_id' => $subjectId,
                                 'teacher_id' => $teacher->id,
-                            ],
-                            [
                                 'form_title' => $formTitle,
                                 'assigned_by' => auth()->id(),
                                 'start_date' => $request->start_date,
@@ -433,10 +469,8 @@ class FormController extends Controller
                                 'grace_period_hours' => $request->grace_period_hours ?? 0,
                                 'is_multi_teacher' => true,
                                 'is_lab' => $pivotData->type === 'lab',
-                            ]
-                        );
+                            ]);
 
-                        if ($assignment->wasRecentlyCreated) {
                             $assignedCount++;
                         }
                     }
@@ -456,24 +490,28 @@ class FormController extends Controller
                 foreach ($request->subject_ids as $subjectId) {
                     if (isset($request->teacher_ids[$subjectId])) {
                         foreach ($request->teacher_ids[$subjectId] as $teacherId) {
-                            $assignment = FormAssignment::firstOrCreate(
-                                [
+                            // Check if this exact assignment already exists
+                            $existingAssignment = FormAssignment::where('form_name', $filename)
+                                ->where('student_id', $studentId)
+                                ->where('subject_id', $subjectId)
+                                ->where('teacher_id', $teacherId)
+                                ->first();
+
+                            if (!$existingAssignment) {
+                                // Create new assignment
+                                FormAssignment::create([
                                     'form_name' => $filename,
                                     'student_id' => $studentId,
                                     'subject_id' => $subjectId,
                                     'teacher_id' => $teacherId,
-                                ],
-                                [
                                     'form_title' => $formTitle,
                                     'assigned_by' => auth()->id(),
                                     'start_date' => $request->start_date,
                                     'end_date' => $request->end_date,
                                     'grace_period_hours' => $request->grace_period_hours ?? 0,
                                     'is_multi_teacher' => true,
-                                ]
-                            );
+                                ]);
 
-                            if ($assignment->wasRecentlyCreated) {
                                 $assignedCount++;
                             }
                         }

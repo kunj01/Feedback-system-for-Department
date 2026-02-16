@@ -67,13 +67,13 @@
                 <p class="text-sm text-gray-600 mt-1">Assign feedback forms based on teacher-batch assignments. Select students by batch, then select their teachers.</p>
             </div>
             <button type="button" onclick="toggleBatchWiseSection()" class="text-green-600 hover:text-green-800 transition-colors">
-                <svg id="batchWiseDropdownIcon" class="w-7 h-7 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg id="batchWiseDropdownIcon" class="w-7 h-7 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
             </button>
         </div>
 
-        <div id="batchWiseSection" class="hidden">
+        <div id="batchWiseSection">
             <form action="{{ route('forms.assign', $formName) }}" method="POST" id="batchWiseAssignForm">
                 @csrf
                 <input type="hidden" name="batch_wise_mode" value="1">
@@ -86,7 +86,17 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                             </svg>
                             Step 1: Select Students
+                            <span class="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">All Students</span>
                         </h4>
+                        
+                        <div class="mb-3 p-2 bg-white border border-blue-300 rounded-lg">
+                            <p class="text-xs text-blue-800 mb-2">
+                                <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                </svg>
+                                <strong>All students are displayed below.</strong> Use filters to narrow the list if needed. Students can have multiple batches/labs.
+                            </p>
+                        </div>
                         
                         <!-- Filter Section -->
                         <div class="mb-3 p-3 bg-white border border-blue-300 rounded-lg">
@@ -124,10 +134,10 @@
                                 <label class="block text-xs font-medium text-gray-700">Select Students</label>
                                 <div class="flex items-center gap-2">
                                     <button type="button" onclick="toggleBatchWiseStudentList()" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors flex items-center gap-1">
-                                        <svg id="batchWiseStudentListIcon" class="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg id="batchWiseStudentListIcon" class="w-3 h-3 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
-                                        <span id="batchWiseStudentListText">Show List</span>
+                                        <span id="batchWiseStudentListText">Hide List</span>
                                     </button>
                                     <label class="flex items-center cursor-pointer">
                                         <input type="checkbox" id="select-all-batchwise-students" class="form-checkbox h-3 w-3 text-blue-600 mr-1">
@@ -135,36 +145,39 @@
                                     </label>
                                 </div>
                             </div>
-                            <div id="batchWiseStudentList" class="hidden space-y-1 max-h-80 overflow-y-auto border rounded-lg p-2 bg-white">
+                            <div id="batchWiseStudentList" class="space-y-1 max-h-80 overflow-y-auto border rounded-lg p-2 bg-white">
                                 @foreach($students as $student)
                                     @php
-                                        $isAssigned = $assignments->where('student_id', $student->id)->isNotEmpty();
+                                        $studentAssignments = $assignments->where('student_id', $student->id);
+                                        $hasAssignments = $studentAssignments->isNotEmpty();
+                                        $assignmentCount = $studentAssignments->count();
                                         $divisionName = $student->division ? $student->division->name : 'Unknown';
                                         $batchName = $student->batchGroup ? $student->batchGroup->batch_name : '';
                                     @endphp
-                                    <label class="batchwise-student-item flex items-center p-2 hover:bg-blue-50 rounded transition-colors {{ $isAssigned ? 'bg-green-50' : '' }}"
+                                    <label class="batchwise-student-item flex items-center p-2 hover:bg-blue-50 rounded transition-colors {{ $hasAssignments ? 'bg-yellow-50 border border-yellow-200' : '' }}"
                                            data-semester="{{ $student->semester }}"
                                            data-division="{{ $divisionName }}"
                                            data-batch="{{ $batchName }}"
                                            data-batch-id="{{ $student->batch_id }}"
                                            data-student-id="{{ $student->id }}">
                                         <input type="checkbox" name="batch_wise_student_ids[]" value="{{ $student->id }}"
-                                               {{ $isAssigned ? 'disabled checked' : '' }}
                                                onchange="updateTeacherListForStudents()"
                                                class="form-checkbox h-3 w-3 text-blue-600 batchwise-student-checkbox">
                                         <div class="ml-2 flex-1 min-w-0">
-                                            <div class="flex items-center gap-1">
+                                            <div class="flex items-center gap-1 flex-wrap">
                                                 <p class="text-xs font-medium text-gray-900 truncate">{{ $student->user->name }}</p>
-                                                <span class="text-xs px-1 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">{{ $divisionName }}</span>
+                                                <span class="text-xs px-1 py-0.5 bg-blue-100 text-blue-700 rounded">{{ $divisionName }}</span>
                                                 @if($batchName)
-                                                    <span class="text-xs px-1 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">{{ $batchName }}</span>
+                                                    <span class="text-xs px-1 py-0.5 bg-purple-100 text-purple-700 rounded">{{ $batchName }}</span>
+                                                @endif
+                                                @if($hasAssignments)
+                                                    <span class="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded font-semibold" title="Already assigned to {{ $assignmentCount }} teacher(s)">
+                                                        {{ $assignmentCount }} teacher{{ $assignmentCount > 1 ? 's' : '' }}
+                                                    </span>
                                                 @endif
                                             </div>
                                             <p class="text-xs text-gray-500">{{ $student->enrollment_no ?? $student->student_id }}</p>
                                         </div>
-                                        @if($isAssigned)
-                                            <span class="ml-2 text-xs font-medium text-green-600">✓</span>
-                                        @endif
                                     </label>
                                 @endforeach
                             </div>
@@ -181,7 +194,8 @@
                         </h4>
                         
                         <div id="batchWiseTeacherInfo" class="mb-3 p-2 bg-white border border-green-300 rounded text-xs text-gray-600">
-                            <p>Select students first. Teachers who teach the selected students' batches will appear here.</p>
+                            <p><strong>All students are displayed on the left.</strong> Once you select students, teachers who teach those students' batches will appear here.</p>
+                            <p class="mt-1 text-green-700">💡 Use filters to narrow down the student list if needed.</p>
                         </div>
                         
                         <!-- Teacher List -->
@@ -728,12 +742,19 @@
                     <div class="p-4 border rounded-lg {{ $assignment->status === 'completed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200' }} hover:shadow-md transition-shadow">
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
-                                <p class="text-sm font-semibold text-gray-900">{{ $assignment->student->user->name }}</p>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <p class="text-sm font-semibold text-gray-900">{{ $assignment->student->user->name }}</p>
+                                    @if($assignment->is_lab)
+                                        <span class="px-2 py-0.5 text-xs font-bold bg-green-200 text-green-800 rounded-full">🔬 LAB</span>
+                                    @else
+                                        <span class="px-2 py-0.5 text-xs font-bold bg-blue-200 text-blue-800 rounded-full">📚 LECTURE</span>
+                                    @endif
+                                </div>
                                 <p class="text-xs text-gray-600 mt-1">{{ $assignment->student->student_id }} • {{ $assignment->student->user->email }}</p>
                                 @if($assignment->is_multi_teacher && $assignment->teacher)
-                                    <p class="text-xs text-blue-600 mt-1 font-medium">
+                                    <p class="text-xs text-blue-600 mt-1 font-medium flex items-center gap-1 flex-wrap">
                                         <span class="bg-blue-100 px-2 py-0.5 rounded">Subject: {{ $assignment->subject->name ?? 'N/A' }}</span>
-                                        <span class="bg-purple-100 px-2 py-0.5 rounded ml-1">Teacher: {{ $assignment->teacher->name ?? 'N/A' }}</span>
+                                        <span class="bg-purple-100 px-2 py-0.5 rounded">Teacher: {{ $assignment->teacher->name ?? 'N/A' }}</span>
                                     </p>
                                 @endif
                                 <p class="text-xs text-gray-500 mt-1">Assigned {{ $assignment->created_at->diffForHumans() }}</p>
@@ -812,13 +833,14 @@
                             <svg class="w-4 h-4 mr-1.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                             </svg>
-                            Teacher's Batches
+                            Teacher's Batches (Info Only)
                         </h4>
                         <label class="flex items-center cursor-pointer">
                             <input type="checkbox" id="select-all-teacher-batches" onclick="toggleAllTeacherBatches(this.checked)" class="form-checkbox h-3 w-3 text-purple-600 mr-1" checked>
                             <span class="text-xs font-medium text-purple-600">All</span>
                         </label>
                     </div>
+                    <p class="text-xs text-purple-700 mb-2 italic">Note: All students are available for selection regardless of batch</p>
                     <div id="modalTeacherBatches" class="space-y-2 text-xs">
                         <!-- Batches will be populated by JavaScript -->
                     </div>
@@ -832,6 +854,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                             </svg>
                             Select Students
+                            <span class="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">All Students Available</span>
                         </h4>
                         <label class="flex items-center cursor-pointer">
                             <input type="checkbox" id="select-all-teacher-students" class="form-checkbox h-4 w-4 text-blue-600 mr-2">
@@ -869,7 +892,7 @@
                     
                     <!-- Student List -->
                     <div id="modalStudentList" class="space-y-1.5 max-h-96 overflow-y-auto border rounded-lg p-3 bg-gray-50">
-                        <!-- Students will be populated by JavaScript -->
+                        <p class="text-center text-xs text-gray-400 py-4">Loading all students...</p>
                     </div>
                 </div>
             </div>
@@ -1760,7 +1783,7 @@ const allStudents = {!! json_encode($students->map(function($student) use ($assi
         'batch_name' => $student->batchGroup ? $student->batchGroup->batch_name : '',
         'division' => $student->division ? $student->division->name : 'Unknown',
         'semester' => $student->semester,
-        'is_assigned' => isset($assignments) ? $assignments->where('student_id', $student->id)->isNotEmpty() : false
+        'assignment_count' => isset($student->assignment_count) ? $student->assignment_count : 0
     ];
 })->values()) !!};
 
@@ -1820,15 +1843,15 @@ function openTeacherAssignModal(teacherId, teacherName, teacherEmail) {
     });
     batchesContainer.innerHTML = batchesHTML;
     
-    // Get students from teacher's batches
+    // Show ALL students (not just from teacher's batches)
+    // This allows flexible assignment since students can be in multiple batches/labs
     const teacherBatchIds = teacher.batches.map(b => b.id);
-    const teacherStudents = allStudents.filter(s => teacherBatchIds.includes(s.batch_id));
     
-    // Populate filter dropdowns
-    populateModalFilters(teacherStudents);
+    // Populate filter dropdowns with ALL students
+    populateModalFilters(allStudents);
     
-    // Display students
-    displayModalStudents(teacherStudents);
+    // Display ALL students by default
+    displayModalStudents(allStudents);
     
     // Show modal
     const modal = document.getElementById('teacherAssignModal');
@@ -1877,32 +1900,35 @@ function displayModalStudents(students) {
     const container = document.getElementById('modalStudentList');
     
     if (students.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-400 py-8">No students found in this teacher\'s batches</p>';
+        container.innerHTML = '<p class="text-center text-gray-400 py-8">No students found</p>';
         return;
     }
     
     container.innerHTML = '';
     students.forEach(student => {
-        const isAssigned = student.is_assigned;
+        const assignmentCount = student.assignment_count || 0;
+        const hasAssignments = assignmentCount > 0;
         const studentDiv = document.createElement('label');
-        studentDiv.className = `modal-student-item flex items-center p-2 hover:bg-blue-50 rounded transition-colors ${isAssigned ? 'bg-green-50' : 'bg-white'}`;
+        studentDiv.className = `modal-student-item flex items-center p-2 hover:bg-blue-50 rounded transition-colors ${hasAssignments ? 'bg-yellow-50 border border-yellow-200' : 'bg-white'}`;
         studentDiv.dataset.semester = student.semester;
         studentDiv.dataset.division = student.division;
         studentDiv.dataset.batch = student.batch_name;
         
+        const assignmentBadge = hasAssignments ? 
+            `<span class="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded font-semibold" title="Already assigned to ${assignmentCount} teacher(s)">${assignmentCount} teacher${assignmentCount > 1 ? 's' : ''}</span>` : '';
+        
         studentDiv.innerHTML = `
             <input type="checkbox" name="teacher_assign_student_ids[]" value="${student.id}"
-                   ${isAssigned ? 'disabled checked' : ''}
                    class="form-checkbox h-3 w-3 text-blue-600 modal-student-checkbox">
             <div class="ml-2 flex-1 min-w-0">
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1 flex-wrap">
                     <p class="text-xs font-medium text-gray-900 truncate">${student.name}</p>
                     <span class="text-xs px-1 py-0.5 bg-blue-100 text-blue-700 rounded">${student.division}</span>
                     ${student.batch_name ? `<span class="text-xs px-1 py-0.5 bg-purple-100 text-purple-700 rounded">${student.batch_name}</span>` : ''}
+                    ${assignmentBadge}
                 </div>
                 <p class="text-xs text-gray-500">${student.enrollment_no}</p>
             </div>
-            ${isAssigned ? '<span class="ml-2 text-xs font-medium text-green-600">✓</span>' : ''}
         `;
         
         container.appendChild(studentDiv);
@@ -1944,7 +1970,7 @@ function filterModalStudents() {
 
 function updateModalFilterSummary() {
     const visibleItems = Array.from(document.querySelectorAll('.modal-student-item'))
-        .filter(item => item.style.display !== 'none' && !item.querySelector('.modal-student-checkbox').disabled);
+        .filter(item => item.style.display !== 'none');
     
     const summary = document.getElementById('modalFilterSummary');
     const countSpan = document.getElementById('modalFilteredCount');
@@ -1965,17 +1991,13 @@ function toggleAllTeacherBatches(checked) {
     filterStudentsByBatches();
 }
 
-// Filter students based on selected batches
+// Filter students based on selected batches (disabled - now showing all students)
 function filterStudentsByBatches() {
-    const selectedBatchIds = Array.from(document.querySelectorAll('.teacher-batch-checkbox:checked'))
-        .map(cb => parseInt(cb.dataset.batchId));
+    // Note: This function now shows ALL students regardless of batch selection
+    // This allows flexible assignment since students can belong to multiple batches/labs
     
-    // Filter students from all students
-    const filteredStudents = allStudents.filter(s => selectedBatchIds.includes(s.batch_id));
-    
-    // Repopulate filters and display
-    populateModalFilters(filteredStudents);
-    displayModalStudents(filteredStudents);
+    // Always show all students
+    displayModalStudents(allStudents);
     
     // Update "Select All Batches" checkbox state
     const allBatchCheckboxes = document.querySelectorAll('.teacher-batch-checkbox');
@@ -1989,7 +2011,7 @@ function filterStudentsByBatches() {
 
 // Select all students in modal
 document.getElementById('select-all-teacher-students')?.addEventListener('change', function() {
-    const visibleCheckboxes = Array.from(document.querySelectorAll('.modal-student-checkbox:not([disabled])'))
+    const visibleCheckboxes = Array.from(document.querySelectorAll('.modal-student-checkbox'))
         .filter(cb => cb.closest('.modal-student-item').style.display !== 'none');
     
     visibleCheckboxes.forEach(checkbox => {
@@ -1999,7 +2021,7 @@ document.getElementById('select-all-teacher-students')?.addEventListener('change
 
 // Form validation before submission
 document.getElementById('teacherAssignForm')?.addEventListener('submit', function(e) {
-    const selectedStudents = Array.from(document.querySelectorAll('.modal-student-checkbox:checked:not([disabled])'));
+    const selectedStudents = Array.from(document.querySelectorAll('.modal-student-checkbox:checked'));
     
     if (selectedStudents.length === 0) {
         e.preventDefault();
@@ -2009,7 +2031,7 @@ document.getElementById('teacherAssignForm')?.addEventListener('submit', functio
     
     // Confirm assignment
     const teacherName = document.getElementById('modalTeacherName').textContent;
-    const confirmation = confirm(`Assign feedback form to ${selectedStudents.length} student(s) for ${teacherName}?`);
+    const confirmation = confirm(`Assign feedback form to ${selectedStudents.length} student(s) for ${teacherName}?\n\nNote: Students already assigned to this teacher will be skipped automatically.`);
     
     if (!confirmation) {
         e.preventDefault();
